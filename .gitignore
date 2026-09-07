@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+next-env.d.ts
+*.tsbuildinfo
+
+.env
+.env.local
+.env*.local
+
+# Claude Code local files (per global convention)
+.claude/
+CLAUDE.local.md
+
+.DS_Store

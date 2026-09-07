@@ -1,0 +1,98 @@
+// Task Tracker — Prisma schema (Postgres บน Supabase)
+//
+// DATABASE_URL = connection pooler (port 6543, ?pgbouncer=true) ใช้ตอน query จริง
+// DIRECT_URL   = direct connection (port 5432) ใช้ตอน migrate เท่านั้น
+//                เพราะ pgbouncer โหมด transaction รัน DDL/advisory lock ไม่ได้
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TaskStatus {
+  todo
+  doing
+  done
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+enum MemberRole {
+  owner
+  editor
+}
+
+/// กระจกเงาของ auth.users — id ตัวเดียวกันกับ Supabase Auth
+/// sync ตอน login ผ่าน ensureUser() ไม่ใช้ DB trigger เพื่อให้ทุกอย่างอยู่ใน Prisma
+model User {
+  id          String   @id @db.Uuid
+  email       String   @unique
+  displayName String?  @map("display_name")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ownedLists   List[]       @relation("ListOwner")
+  memberships  ListMember[]
+  createdTasks Task[]       @relation("TaskCreator")
+
+  @@map("users")
+}
+
+model List {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(80)
+  ownerId   String   @map("owner_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  owner   User         @relation("ListOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members ListMember[]
+  tasks   Task[]
+
+  @@index([ownerId])
+  @@map("lists")
+}
+
+model ListMember {
+  listId   String     @map("list_id") @db.Uuid
+  userId   String     @map("user_id") @db.Uuid
+  role     MemberRole @default(editor)
+  joinedAt DateTime   @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([listId, userId])
+  @@index([userId])
+  @@map("list_members")
+}
+
+model Task {
+  id          String       @id @default(uuid()) @db.Uuid
+  listId      String       @map("list_id") @db.Uuid
+  title       String       @db.VarChar(200)
+  notes       String?
+  status      TaskStatus   @default(todo)
+  priority    TaskPriority @default(medium)
+  /// เก็บเป็น `date` ไม่ใช่ timestamp — วันครบกำหนดไม่ควรขึ้นกับ timezone
+  dueDate     DateTime?    @map("due_date") @db.Date
+  tags        String[]     @default([])
+  createdById String       @map("created_by") @db.Uuid
+  completedAt DateTime?    @map("completed_at") @db.Timestamptz(6)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  list      List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  createdBy User @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([listId, status])
+  @@index([listId, dueDate])
+  @@map("tasks")
+}
