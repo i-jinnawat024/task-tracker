@@ -14,13 +14,10 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "db:lockdown": "prisma db execute --file prisma/lockdown.sql --schema prisma/schema.prisma"
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^6.3.0",
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.48.1",
     "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

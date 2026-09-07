@@ -36,7 +36,16 @@ export default function AuthForm() {
         {mode === "signup" && (
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-slate-600">ชื่อที่ให้คนอื่นเห็น</span>
-            <input name="display_name" className="field" placeholder="เช่น มะปราง" autoComplete="nickname" />
+            <input
+              name="display_name"
+              maxLength={50}
+              className="field"
+              placeholder="เช่น มะปราง"
+              autoComplete="nickname"
+            />
+            {state?.errors?.displayName && (
+              <p className="mt-1 text-xs text-rose-600">{state.errors.displayName}</p>
+            )}
           </label>
         )}
 
@@ -50,6 +59,9 @@ export default function AuthForm() {
             placeholder="you@example.com"
             autoComplete="email"
           />
+          {state?.errors?.email && (
+            <p className="mt-1 text-xs text-rose-600">{state.errors.email}</p>
+          )}
         </label>
 
         <label className="block">
@@ -62,6 +74,9 @@ export default function AuthForm() {
             className="field"
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
           />
+          {state?.errors?.password && (
+            <p className="mt-1 text-xs text-rose-600">{state.errors.password}</p>
+          )}
         </label>
 
         {state?.message && (

@@ -1,77 +1,60 @@
 # Task Tracker
 
-ลิสต์งานที่แชร์กันได้ 2 คน — Next.js 15 + Prisma + Supabase Auth
+ลิสต์งานที่แชร์กันได้ 2 คน — Next.js 15 (App Router) + Prisma + Postgres
 
-**ฟีเจอร์:** เพิ่ม/แก้/ลบ/ติ๊กเสร็จ · กำหนดวันเสร็จ + ไฮไลต์งานเลยกำหนด · ความสำคัญ 3 ระดับ + แท็ก · แชร์ลิสต์ให้อีกคนแก้ร่วมกันได้
+**ฟีเจอร์:** เพิ่ม/แก้/ลบ/ติ๊กเสร็จ · กำหนดวันเสร็จ + ไฮไลต์งานเลยกำหนด · ความสำคัญ 3 ระดับ + แท็ก · แชร์ลิสต์ให้อีกคนแก้ร่วมกันได้ · login ด้วยอีเมล+รหัสผ่าน
+
+ไม่มี dependency ภายนอกนอกจาก DB — auth เขียนเองทั้งหมด (scrypt จาก `node:crypto` + session ใน DB)
 
 ---
 
-## ตั้งค่าครั้งแรก (ทำตามลำดับ ~10 นาที)
+## รันเลย (setup แล้ว)
 
-### 1. สร้าง Supabase project
-
-1. เข้า https://supabase.com → **Sign in with GitHub** → **New project**
-2. กรอก
-   - **Name:** `task-tracker`
-   - **Database Password:** กดปุ่ม Generate แล้ว **copy เก็บไว้** (หน้านี้ไม่โชว์ซ้ำ)
-   - **Region:** `Southeast Asia (Singapore)` — ใกล้ไทยสุด latency ต่ำสุด
-3. กด **Create new project** แล้วรอ ~2 นาที
-
-### 2. เอาค่า env มาใส่
-
-```bash
-cp .env.example .env
-```
-
-เปิด `.env` แล้วเติม 4 ค่า:
-
-> ใช้ `.env` ไฟล์เดียว **ไม่ใช่ `.env.local`** — Prisma CLI อ่านแค่ `.env` ถ้าไปใส่ใน
-> `.env.local` คำสั่ง `pnpm db:migrate` จะหา `DATABASE_URL` ไม่เจอ (Next.js อ่านทั้งสองอยู่แล้ว)
-
-| ตัวแปร | หาจากไหน |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project Settings → **API** → Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project Settings → **API** → anon public key |
-| `DATABASE_URL` | ปุ่ม **Connect** (บนสุด) → tab **ORMs** → เลือก **Prisma** → copy บรรทัด `DATABASE_URL` |
-| `DIRECT_URL` | จากหน้าเดียวกัน copy บรรทัด `DIRECT_URL` |
-
-ทั้ง 2 บรรทัดล่างจะมี `[YOUR-PASSWORD]` อยู่ — แทนด้วย database password จากข้อ 1
-
-> ถ้ารหัสผ่านมีอักขระพิเศษต้อง URL-encode ก่อน (`@` → `%40`, `#` → `%23`, `/` → `%2F`)
-> ลืมรหัส: Project Settings → Database → **Reset database password**
-
-### 3. สร้างตารางใน DB
-
-```bash
-pnpm install
-pnpm db:migrate      # ถามชื่อ migration ให้พิมพ์ init
-pnpm db:lockdown
-```
-
-- `db:migrate` — Prisma สร้างตาราง `users` / `lists` / `list_members` / `tasks` ให้
-- `db:lockdown` — **ห้ามข้าม** เปิด RLS ปิดทาง REST API ของ Supabase (เหตุผลอยู่ใน [prisma/lockdown.sql](prisma/lockdown.sql))
-  ถ้ารันไม่ผ่าน ให้ copy เนื้อไฟล์ไปวางใน Dashboard → **SQL Editor** → Run แทนได้
-
-### 4. ปิด email confirmation (ไม่บังคับ แต่สะดวกกว่า)
-
-Supabase Dashboard → **Authentication** → **Sign In / Providers** → Email → ปิด **Confirm email** → Save
-
-ถ้าไม่ปิด สมัครแล้วต้องไปกดลิงก์ในอีเมลก่อน login (ซึ่ง Supabase free tier ส่งได้ 2 ฉบับ/ชั่วโมง)
-
-### 5. รัน
+DB migrate เรียบร้อยแล้ว ค่า connection อยู่ใน `.env` (ไม่ถูก commit)
 
 ```bash
 pnpm dev
 ```
 
-เปิด http://localhost:3000 → สมัครสมาชิก → ใช้งานได้เลย
+เปิด http://localhost:3000 → **สมัครสมาชิก** → ใช้งานได้เลย
 
-### 6. แชร์ให้อีกคน
+### แชร์ให้อีกคน
 
 1. ให้เขา **สมัครสมาชิกในแอปเองก่อน** ด้วยอีเมลของเขา
 2. เจ้าของลิสต์กด **คนที่ใช้ลิสต์นี้** (ล่างสุด) → ใส่อีเมลของเขา → **แชร์**
 
-แอปไม่ส่งอีเมลเชิญให้ — ต้องบอกเขาเองว่าให้ไปสมัคร (กันแอปถูกใช้ยิง spam)
+แอปไม่ส่งอีเมลเชิญ — ต้องบอกเขาเองว่าให้ไปสมัคร (ไม่อยากให้แอปกลายเป็นเครื่องมือยิง spam
+และการส่งอีเมลต้องมี provider เพิ่มอีกตัว)
+
+---
+
+## ตั้งค่าใหม่จากศูนย์ (เครื่องอื่น / DB ใหม่)
+
+```bash
+cp .env.example .env      # แล้วใส่ DATABASE_URL ของ Postgres ที่จะใช้
+pnpm install
+pnpm db:migrate           # ถามชื่อ migration ให้พิมพ์ init
+pnpm dev
+```
+
+> ใช้ `.env` **ไม่ใช่ `.env.local`** — Prisma CLI อ่านแค่ `.env` ถ้าไปใส่ใน `.env.local`
+> คำสั่ง `pnpm db:migrate` จะหา `DATABASE_URL` ไม่เจอ (Next.js อ่านทั้งสองอยู่แล้ว)
+
+DB ที่ใช้ตอนนี้คือ **Prisma Postgres** ซึ่งมี endpoint เดียว ถ้าย้ายไป Supabase/Neon
+ที่แยก pooler กับ direct connection ต้องเพิ่มใน `prisma/schema.prisma`:
+
+```prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // pooler port 6543 + ?pgbouncer=true
+  directUrl = env("DIRECT_URL")     // direct port 5432 — migrate ต้องใช้ตัวนี้
+}
+```
+
+**และถ้าย้ายไป Supabase ต้องเปิด RLS ให้ทุกตารางด้วย** เพราะ Supabase เปิด REST API
+ให้ทุกตารางใน schema `public` อัตโนมัติ — ใครมี anon key ก็ยิงอ่าน/เขียนได้
+(`alter table ... enable row level security;` แบบไม่มี policy ก็พอ เพราะ Prisma
+ต่อด้วย role ที่ BYPASSRLS อยู่แล้ว)
 
 ---
 
@@ -81,10 +64,10 @@ pnpm dev
 pnpm dlx vercel
 ```
 
-ใส่ env 4 ตัวเดิมใน Vercel (`.env` ไม่ถูก commit ขึ้นไป ต้องกรอกเองในหน้าเว็บ) → Project → Settings → Environment Variables
-แล้วเปลี่ยน Supabase Dashboard → Authentication → URL Configuration → **Site URL** เป็น URL ของ Vercel
+ใส่ `DATABASE_URL` ใน Vercel → Project → Settings → Environment Variables (`.env` ไม่ถูก commit ขึ้นไป)
 
-> Vercel ใช้ serverless แต่ละ request แยก connection — `DATABASE_URL` **ต้องเป็น pooler port 6543 พร้อม `?pgbouncer=true&connection_limit=1`** ไม่ใช่ port 5432 ไม่งั้นชน connection limit เร็วมาก
+> serverless แต่ละ request แยก connection — ถ้า DB มี pooler ต้องชี้ `DATABASE_URL`
+> ไปที่ pooler พร้อม `connection_limit=1` ไม่ใช่ direct connection ไม่งั้นชน connection limit เร็วมาก
 
 ---
 
@@ -92,13 +75,13 @@ pnpm dlx vercel
 
 ```bash
 pnpm dev            # dev server
-pnpm test           # unit test (38 เคส)
+pnpm test           # unit test (60 เคส)
 pnpm test:watch     # test แบบ watch
 pnpm typecheck      # tsc --noEmit
 pnpm lint           # eslint
 pnpm db:studio      # เปิด Prisma Studio ดู/แก้ข้อมูลใน DB
 pnpm db:migrate     # สร้าง migration ใหม่หลังแก้ schema.prisma
-pnpm db:lockdown    # เปิด RLS ให้ตารางใหม่ (รันทุกครั้งที่ migrate เพิ่มตาราง)
+pnpm db:deploy      # apply migration บน production (ไม่สร้างใหม่)
 ```
 
 ---
@@ -106,21 +89,46 @@ pnpm db:lockdown    # เปิด RLS ให้ตารางใหม่ (ร
 ## สถาปัตยกรรม & เหตุผล
 
 ```
-browser ──► Server Action ──► requireAccess() ──► Prisma ──► Postgres (Supabase)
-   │                                                            
-   └─────► Supabase Auth (cookie session) ◄─── middleware ต่ออายุ token
+browser ──► Server Action ──► requireUser() ──► requireAccess() ──► Prisma ──► Postgres
+                                   │                  │
+                          session cookie        เจ้าของ/สมาชิก?
 ```
 
-**Auth คนละชั้นกับ data** — Supabase Auth ถือ session (เพราะเขียน password auth เองมีความเสี่ยงมากกว่าประโยชน์) แต่ข้อมูล task ทั้งหมดอ่าน-เขียนผ่าน Prisma ไม่แตะ Supabase Data API เลย
+browser ไม่มีทางต่อ DB ตรง — ทางเข้าเดียวคือ Server Action ของเรา ทุกตัวเช็ค 2 ชั้น:
+ใครเป็นคนขอ (`requireUser`) แล้วคนนั้นมีสิทธิ์กับลิสต์นี้ไหม (`requireAccess`)
 
-**สิทธิ์อยู่ในโค้ด ไม่ใช่ RLS** — Prisma ต่อ Postgres ด้วย role `postgres` ที่ `BYPASSRLS` policy ใน DB จึงไม่ถูกบังคับใช้ สิทธิ์ทุกอย่างจึงมาจบที่ [`requireAccess()`](src/lib/db/access.ts) ซึ่งมี test คุมครบทุกทางแยก และทุกฟังก์ชันใน [`lists.ts`](src/lib/db/lists.ts) เรียก `assertAccess()` ก่อนแตะข้อมูล
-แลกมาด้วยข้อดี: browser ไม่มีทางต่อ DB ตรง — ทางเข้าเดียวคือ Server Action ของเรา
+**สิทธิ์อยู่ในโค้ด ไม่ใช่ RLS** — Prisma ต่อ Postgres ด้วย role ที่ BYPASSRLS
+policy ใน DB จึงไม่ถูกบังคับใช้ สิทธิ์ทั้งหมดมาจบที่ [`requireAccess()`](src/lib/db/access.ts)
+ซึ่งเป็น pure function มี test คุมครบทุกทางแยก และทุกฟังก์ชันใน
+[`lists.ts`](src/lib/db/lists.ts) เรียก `assertAccess()` ก่อนแตะข้อมูลทุกครั้ง
 
-**ทำไมต้อง `db:lockdown`** — Supabase เปิด REST API ให้ทุกตารางใน schema `public` อัตโนมัติ ใครมี anon key (ซึ่ง public อยู่ใน JS bundle) ก็ยิงอ่าน/เขียนได้ การเปิด RLS แบบไม่มี policy = ปิดประตูนั้นทิ้ง
+**รหัสผ่าน hash ด้วย scrypt จาก `node:crypto`** ไม่ใช่ bcrypt/argon2 เพราะ
+ไม่ต้องเพิ่ม dependency หรือ native binary (ลดความเสี่ยง supply chain), scrypt เป็น
+memory-hard ทน GPU brute-force เหมือน argon2, และ bcrypt ตัด password ที่ยาวเกิน
+72 byte เงียบๆ ซึ่งเป็นกับดักที่ไม่ต้องเจอ — เก็บ salt กับ cost ไว้ในตัว hash
+(`scrypt$N$r$p$salt$hash`) เพื่อขึ้น cost ในอนาคตได้โดยรหัสเก่ายัง verify ผ่าน
 
-**วันที่เก็บเป็น string `YYYY-MM-DD`** — คอลัมน์เป็น `date` ไม่ใช่ `timestamp` เพราะ "ครบกำหนดวันที่ 7" ไม่ควรเปลี่ยนตาม timezone ของเครื่องที่เปิดดู [`map.ts`](src/lib/db/map.ts) แปลงไป-กลับด้วย `getUTC*` เท่านั้น และ [`todayISO()`](src/lib/tasks.ts) อ่านวันจากเวลาท้องถิ่น ไม่ใช่ `toISOString()` (ซึ่งจะทำให้คนไทยกดตอน 00:30 เห็นวันเมื่อวาน)
+**session เป็น opaque token ใน DB ไม่ใช่ JWT** — เพิกถอนได้ทันที (กด "ออกจากระบบ"
+แล้วจบจริง ไม่ใช่รอ token หมดอายุ) DB เก็บแค่ sha256 ของ token ที่อยู่ใน cookie
+ถ้า DB รั่วก็ปลอม session ไม่ได้ · cookie เป็น httpOnly (XSS ขโมยไม่ได้) + sameSite lax
 
-**ไม่มี realtime** — Prisma ทำ realtime ไม่ได้ และการเปิด Supabase Realtime ต้องมี RLS policy ซึ่งจะกลายเป็นเขียน logic สิทธิ์ 2 ที่ [`Board.tsx`](src/components/Board.tsx) จึง `router.refresh()` ทุก 15 วิ (เฉพาะตอนแท็บ visible) ซึ่งพอสำหรับ 2 คน
+**login ไม่บอกใบ้ว่าอีเมลไหนมีบัญชี** — ทั้งกรณีไม่มี user และรหัสผิด ตอบข้อความเดียวกัน
+และกรณีไม่เจอ user ยังเสียเวลา verify กับ hash หลอกๆ เพื่อไม่ให้เวลาตอบสนองบอกใบ้ได้
+(ดู `DUMMY_HASH` ใน [`auth/index.ts`](src/lib/auth/index.ts))
+
+**middleware ตรวจแค่ว่ามี cookie ไหม** — ไม่ได้ตรวจว่า session ใช้ได้จริง เพราะ middleware
+รันบน Edge runtime ที่ต่อ Prisma ไม่ได้ ถือเป็นแค่ด่านหน้าราคาถูก การตัดสินสิทธิ์จริง
+อยู่ฝั่ง server component/action เสมอ · และไม่ทำ redirect `/login → /board` ที่นั้น
+เพราะถ้า cookie ค้างแต่ session ตายแล้วจะเด้งไป-กลับไม่จบ
+
+**วันที่เก็บเป็น string `YYYY-MM-DD`** — คอลัมน์เป็น `date` ไม่ใช่ `timestamp` เพราะ
+"ครบกำหนดวันที่ 7" ไม่ควรเปลี่ยนตาม timezone ของเครื่องที่เปิดดู
+[`map.ts`](src/lib/db/map.ts) แปลงไป-กลับด้วย `getUTC*` เท่านั้น และ
+[`todayISO()`](src/lib/tasks.ts) อ่านวันจากเวลาท้องถิ่น ไม่ใช่ `toISOString()`
+(ซึ่งจะทำให้คนไทยกดตอน 00:30 เห็นวันเมื่อวาน)
+
+**ไม่มี realtime** — Prisma ทำ realtime ไม่ได้ [`Board.tsx`](src/components/Board.tsx)
+จึง `router.refresh()` ทุก 15 วิ (เฉพาะตอนแท็บ visible) ซึ่งพอสำหรับใช้กัน 2 คน
 
 ---
 
@@ -128,8 +136,8 @@ browser ──► Server Action ──► requireAccess() ──► Prisma ─�
 
 ```
 prisma/
-  schema.prisma        โมเดล User / List / ListMember / Task
-  lockdown.sql         เปิด RLS ปิด REST API (รันผ่าน pnpm db:lockdown)
+  schema.prisma        โมเดล User / Session / List / ListMember / Task
+  migrations/
 src/
   app/
     actions.ts         Server Actions ทั้งหมด (auth + task + sharing)
@@ -139,14 +147,19 @@ src/
   lib/
     tasks.ts           logic บริสุทธิ์: validate, sort, filter, overdue, summary
     types.ts
-    auth.ts            อ่าน session + sync user ลง Prisma
+    auth/
+      index.ts         registerUser / loginUser
+      credentials.ts   validate + normalize อีเมล-รหัสผ่าน
+      password.ts      scrypt hash/verify + session token
+      session.ts       สร้าง/อ่าน/ลบ session (แตะ cookie + DB)
+      cookie.ts        ชื่อ cookie เฉยๆ — แยกไว้ให้ Edge import ได้
     db/
       access.ts        requireAccess() — ด่านตรวจสิทธิ์
       lists.ts         query/mutation ทั้งหมด (เรียก assertAccess ก่อนทุกครั้ง)
       map.ts           Prisma row → Task (จัดการเรื่องวันที่)
       prisma.ts        client singleton
-  middleware.ts        ต่ออายุ session + กันคนไม่ login เข้า /board
-tests/                 38 เคส ครอบ logic + สิทธิ์ + การแปลงวันที่
+  middleware.ts        ด่านหน้า: ไม่มี cookie ก็ไม่ให้เข้า /board
+tests/                 60 เคส — logic, สิทธิ์, การแปลงวันที่, hash รหัสผ่าน, validate
 ```
 
 ---
@@ -155,11 +168,11 @@ tests/                 38 เคส ครอบ logic + สิทธิ์ + �
 
 | อาการ | สาเหตุ / วิธีแก้ |
 |---|---|
-| `ยังไม่ได้ตั้งค่า Supabase` | ยังไม่มีไฟล์ `.env` หรือค่ายังว่าง → ทำข้อ 2 |
 | `Environment variable not found: DATABASE_URL` | ใส่ค่าไว้ใน `.env.local` — ต้องอยู่ใน `.env` |
-| `Can't reach database server` | รหัสผ่านใน `DATABASE_URL` ผิด หรือมีอักขระพิเศษที่ยังไม่ URL-encode |
-| `prepared statement "s0" already exists` | `DATABASE_URL` ลืมใส่ `?pgbouncer=true` |
-| migrate ค้างไม่ขยับ | `DIRECT_URL` ชี้ port 6543 อยู่ — ต้องเป็น **5432** |
-| สมัครแล้ว login ไม่ได้ | Confirm email ยังเปิด → ไปกดลิงก์ในอีเมล หรือปิดตามข้อ 4 |
+| `Can't reach database server` | `DATABASE_URL` ผิด หรือรหัสผ่านมีอักขระพิเศษที่ยังไม่ URL-encode (`@` → `%40`) |
+| `prepared statement "s0" already exists` | ต่อผ่าน pgbouncer แต่ลืมใส่ `?pgbouncer=true` |
+| migrate ค้างไม่ขยับ | ชี้ไปที่ transaction pooler — migrate ต้องใช้ direct connection (`directUrl`) |
+| สมัครแล้วขึ้น `อีเมลนี้สมัครไว้แล้ว` | มีบัญชีอยู่แล้ว → ไปแท็บเข้าสู่ระบบ (อีเมลไม่สนตัวพิมพ์ใหญ่เล็ก) |
 | แชร์แล้วขึ้น `ยังไม่มีบัญชีอีเมลนี้` | อีกคนยังไม่ได้สมัคร หรือสมัครด้วยอีเมลอื่น |
 | อีกคนเพิ่มงานแล้วไม่เห็น | รอ 15 วิ (auto refresh) หรือ refresh หน้าเอง |
+| ลืมรหัสผ่าน | ยังไม่มีฟีเจอร์ reset (ต้องมี email provider) — แก้ผ่าน `pnpm db:studio` ชั่วคราว |

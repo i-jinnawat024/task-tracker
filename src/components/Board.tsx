@@ -128,7 +128,7 @@ export default function Board({
         </div>
       </section>
 
-      <NewTaskForm listId={activeList.id} today={today} />
+      <NewTaskForm listId={activeList.id} />
 
       <div className="mb-3 mt-5 space-y-2.5">
         <div className="flex gap-1 rounded-lg bg-slate-200/60 p-1">

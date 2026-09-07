@@ -1,6 +1,13 @@
+import { redirect } from "next/navigation";
 import AuthForm from "@/components/AuthForm";
+import { getCurrentUser } from "@/lib/auth";
 
-export default function LoginPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage() {
+  // middleware ตรวจแค่ว่ามี cookie ไหม — ตรงนี้คือที่ที่รู้ว่า session ใช้ได้จริงหรือไม่
+  if (await getCurrentUser()) redirect("/board");
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5 py-10">
       <div className="mb-6 text-center">

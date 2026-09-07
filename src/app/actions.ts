@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import {
+  destroyCurrentSession,
+  loginUser,
+  registerUser,
+  requireUser,
+} from "@/lib/auth";
 import { ForbiddenError } from "@/lib/db/access";
 import {
   createList,
@@ -17,7 +22,6 @@ import {
 } from "@/lib/db/lists";
 import { validateTaskInput } from "@/lib/tasks";
 import type { Priority, Status } from "@/lib/types";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type ActionState = {
   ok: boolean;
@@ -35,52 +39,46 @@ function toState(error: unknown): ActionState {
   return { ok: false, message: "เกิดข้อผิดพลาด ลองอีกครั้งนะ" };
 }
 
-// ────────────────────────────── auth ──────────────────────────────
+// ───────────────────────────── auth ─────────────────────────────
 
 export async function signIn(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  let result;
+  try {
+    result = await loginUser({
+      email: String(formData.get("email") ?? ""),
+      password: String(formData.get("password") ?? ""),
+    });
+  } catch (error) {
+    return toState(error);
+  }
 
-  if (!email || !password)
-    return { ok: false, message: "กรอกอีเมลและรหัสผ่านให้ครบก่อนนะ" };
+  if (!result.ok) return { ok: false, message: result.message, errors: result.errors };
 
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) return { ok: false, message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
-
+  // redirect() ทำงานด้วยการ throw — ต้องอยู่นอก try ไม่ให้ catch กลืนไป
   revalidatePath(BOARD);
   redirect(BOARD);
 }
 
 export async function signUp(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const displayName = String(formData.get("display_name") ?? "").trim();
+  let result;
+  try {
+    result = await registerUser({
+      email: String(formData.get("email") ?? ""),
+      password: String(formData.get("password") ?? ""),
+      displayName: String(formData.get("display_name") ?? ""),
+    });
+  } catch (error) {
+    return toState(error);
+  }
 
-  if (!email) return { ok: false, message: "กรอกอีเมลด้วยนะ" };
-  if (password.length < 8) return { ok: false, message: "รหัสผ่านต้องยาวอย่างน้อย 8 ตัว" };
-
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { display_name: displayName || email.split("@")[0] } },
-  });
-
-  if (error) return { ok: false, message: error.message };
-
-  // เปิด "Confirm email" อยู่ → ยังไม่มี session ต้องไปกดลิงก์ในอีเมลก่อน
-  if (!data.session)
-    return { ok: true, message: "สมัครสำเร็จ! เช็คอีเมลเพื่อยืนยันตัวตน แล้วกลับมา login" };
+  if (!result.ok) return { ok: false, message: result.message, errors: result.errors };
 
   revalidatePath(BOARD);
   redirect(BOARD);
 }
 
 export async function signOut(): Promise<void> {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
+  await destroyCurrentSession();
   revalidatePath("/", "layout");
   redirect("/login");
 }

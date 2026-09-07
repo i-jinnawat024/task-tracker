@@ -10,7 +10,7 @@ const PRIORITY_LABEL: Record<string, string> = {
   low: "ไว้ก่อน",
 };
 
-export default function NewTaskForm({ listId, today }: { listId: string; today: string }) {
+export default function NewTaskForm({ listId }: { listId: string }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(addTask, null);
   const [expanded, setExpanded] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -53,7 +53,9 @@ export default function NewTaskForm({ listId, today }: { listId: string; today: 
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-slate-600">กำหนดเสร็จ</span>
-              <input type="date" name="due_date" min={today} className="field py-1.5 text-xs" />
+              {/* ไม่ใส่ min={today} เพราะจดงานที่เลยกำหนดไปแล้วเป็นเคสจริง
+                  (นึกขึ้นได้ทีหลังว่าลืมทำ) — logic ฝั่ง server รับวันในอดีตอยู่แล้ว */}
+              <input type="date" name="due_date" className="field py-1.5 text-xs" />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-slate-600">ความสำคัญ</span>

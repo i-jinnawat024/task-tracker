@@ -1,54 +1,27 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SESSION_COOKIE } from "@/lib/auth/cookie";
 
-/** ต่ออายุ access token ก่อนเข้าเพจ + กันคนที่ยังไม่ login ออกจาก /board
- *  ต้องทำใน middleware เพราะเป็นที่เดียวที่เขียน cookie กลับไปที่ browser ได้แน่นอน */
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+/** ด่านหน้าแบบถูกๆ: ไม่มี cookie เลยก็ไม่ต้องเสียเวลาไปถึงเพจ
+ *
+ *  ที่นี่ตรวจแค่ "มี cookie ไหม" ไม่ได้ตรวจว่า session ใช้ได้จริง เพราะ middleware
+ *  รันบน Edge runtime ที่ต่อ Prisma ไม่ได้ — การตรวจของจริงอยู่ที่ requireUser()
+ *  ฝั่ง server component/action ซึ่งเป็นที่ที่ตัดสินสิทธิ์จริง
+ *
+ *  และไม่ทำ redirect /login → /board ที่นี่ เพราะถ้า cookie ค้างแต่ session ตายแล้ว
+ *  จะเด้งไป-กลับไม่จบ (/login → /board → requireUser → /login → ...)
+ *  หน้า /login เช็คเองด้วย getCurrentUser() ซึ่งเข้าถึง DB ได้ */
+export function middleware(request: NextRequest) {
+  const hasCookie = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  // ยังไม่ตั้ง env — ปล่อยผ่านไปให้เพจแสดง error ที่บอกวิธีแก้ ดีกว่า redirect วนไม่จบ
-  if (!url || !anonKey) return response;
-
-  const supabase = createServerClient(url, anonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-        for (const { name, value } of cookiesToSet) {
-          request.cookies.set(name, value);
-        }
-        response = NextResponse.next({ request });
-        for (const { name, value, options } of cookiesToSet) {
-          response.cookies.set(name, value, options);
-        }
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const path = request.nextUrl.pathname;
-
-  if (!user && path.startsWith("/board")) {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = "/login";
-    return NextResponse.redirect(redirect);
+  if (!hasCookie && request.nextUrl.pathname.startsWith("/board")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
   }
 
-  if (user && path === "/login") {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = "/board";
-    return NextResponse.redirect(redirect);
-  }
-
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|webp)$).*)"],
+  matcher: ["/board/:path*", "/board"],
 };
