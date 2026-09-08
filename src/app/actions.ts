@@ -8,6 +8,11 @@ import {
   registerUser,
   requireUser,
 } from "@/lib/auth";
+import {
+  applyPasswordReset,
+  GENERIC_RESET_MESSAGE,
+  requestPasswordReset,
+} from "@/lib/auth/reset-service";
 import { ForbiddenError } from "@/lib/db/access";
 import {
   createList,
@@ -81,6 +86,42 @@ export async function signOut(): Promise<void> {
   await destroyCurrentSession();
   revalidatePath("/", "layout");
   redirect("/login");
+}
+
+export async function requestResetAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    await requestPasswordReset(String(formData.get("email") ?? ""));
+  } catch (error) {
+    // ส่งอีเมลไม่ผ่าน (key ผิด/Resend ล่ม) — log ไว้แล้วใน sendMail
+    // ตอบข้อความเดิมเพื่อไม่ให้ error กลายเป็นช่องบอกว่าอีเมลนี้มีบัญชีจริง
+    console.error("[reset] request", error);
+  }
+
+  // สำเร็จหรือไม่ ตอบเหมือนกันหมด ไม่บอกใบ้ว่าอีเมลไหนมีบัญชี
+  return { ok: true, message: GENERIC_RESET_MESSAGE };
+}
+
+export async function resetPasswordAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  let result;
+  try {
+    result = await applyPasswordReset(String(formData.get("token") ?? ""), {
+      password: String(formData.get("password") ?? ""),
+      confirm: String(formData.get("confirm") ?? ""),
+    });
+  } catch (error) {
+    return toState(error);
+  }
+
+  if (!result.ok) return { ok: false, message: result.message, errors: result.errors };
+
+  revalidatePath(BOARD);
+  redirect(BOARD);
 }
 
 // ────────────────────────────── tasks ──────────────────────────────

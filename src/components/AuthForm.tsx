@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { signIn, signUp, type ActionState } from "@/app/actions";
 
@@ -92,6 +93,15 @@ export default function AuthForm() {
         <button type="submit" disabled={pending} className="btn-primary w-full">
           {pending ? "กำลังดำเนินการ…" : mode === "signin" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
         </button>
+
+        {mode === "signin" && (
+          <Link
+            href="/forgot"
+            className="block pt-1 text-center text-xs text-slate-400 hover:text-slate-600"
+          >
+            ลืมรหัสผ่าน?
+          </Link>
+        )}
       </form>
     </div>
   );

@@ -39,12 +39,29 @@ model User {
   displayName  String?  @map("display_name")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  sessions     Session[]
-  ownedLists   List[]       @relation("ListOwner")
-  memberships  ListMember[]
-  createdTasks Task[]       @relation("TaskCreator")
+  sessions       Session[]
+  passwordResets PasswordReset[]
+  ownedLists     List[]       @relation("ListOwner")
+  memberships    ListMember[]
+  createdTasks   Task[]       @relation("TaskCreator")
 
   @@map("users")
+}
+
+/// ลิงก์ตั้งรหัสใหม่ — เก็บ sha256 ของ token เหมือน session
+/// usedAt ทำให้ลิงก์ใช้ได้ครั้งเดียว (ไม่ลบทิ้งทันทีเพื่อบอกผู้ใช้ได้ว่า "ใช้ไปแล้ว"
+/// แทนที่จะขึ้นว่า "ลิงก์ไม่ถูกต้อง" ซึ่งทำให้คนงงว่าพิมพ์ผิดหรืออะไร)
+model PasswordReset {
+  tokenHash String    @id @map("token_hash")
+  userId    String    @map("user_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("password_resets")
 }
 
 /// session แบบ opaque token เก็บใน DB — เลือกแบบนี้แทน JWT เพราะ

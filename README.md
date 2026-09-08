@@ -2,7 +2,7 @@
 
 ลิสต์งานที่แชร์กันได้ 2 คน — Next.js 15 (App Router) + Prisma + Postgres
 
-**ฟีเจอร์:** เพิ่ม/แก้/ลบ/ติ๊กเสร็จ · กำหนดวันเสร็จ + ไฮไลต์งานเลยกำหนด · ความสำคัญ 3 ระดับ + แท็ก · แชร์ลิสต์ให้อีกคนแก้ร่วมกันได้ · login ด้วยอีเมล+รหัสผ่าน
+**ฟีเจอร์:** เพิ่ม/แก้/ลบ/ติ๊กเสร็จ · กำหนดวันเสร็จ + ไฮไลต์งานเลยกำหนด · ความสำคัญ 3 ระดับ + แท็ก · แชร์ลิสต์ให้อีกคนแก้ร่วมกันได้ · login ด้วยอีเมล+รหัสผ่าน · ลืมรหัสผ่าน (ส่งลิงก์ทางอีเมล)
 
 ไม่มี dependency ภายนอกนอกจาก DB — auth เขียนเองทั้งหมด (scrypt จาก `node:crypto` + session ใน DB)
 
@@ -23,8 +23,30 @@ pnpm dev
 1. ให้เขา **สมัครสมาชิกในแอปเองก่อน** ด้วยอีเมลของเขา
 2. เจ้าของลิสต์กด **คนที่ใช้ลิสต์นี้** (ล่างสุด) → ใส่อีเมลของเขา → **แชร์**
 
-แอปไม่ส่งอีเมลเชิญ — ต้องบอกเขาเองว่าให้ไปสมัคร (ไม่อยากให้แอปกลายเป็นเครื่องมือยิง spam
-และการส่งอีเมลต้องมี provider เพิ่มอีกตัว)
+แอปไม่ส่งอีเมลเชิญ — ต้องบอกเขาเองว่าให้ไปสมัคร (ไม่อยากให้แอปกลายเป็นเครื่องมือยิง spam)
+
+### เปิดอีเมลจริงสำหรับ "ลืมรหัสผ่าน"
+
+flow ลืมรหัสผ่าน**ทำงานได้แล้วโดยไม่ต้องตั้งอะไรเพิ่ม** แต่ตอนยังไม่มี `RESEND_API_KEY`
+ลิงก์จะไป **log ที่ console ของ server** แทนการส่งอีเมลจริง (ใช้ตอน dev ได้สบาย
+แต่แฟนคุณกดเองไม่ได้ ต้องมาเปิด terminal)
+
+เปิดอีเมลจริง:
+
+1. สมัคร https://resend.com (ฟรี 3,000 ฉบับ/เดือน) → **API Keys** → Create
+2. ใส่ใน `.env`:
+   ```
+   RESEND_API_KEY=re_xxxxxxxx
+   MAIL_FROM="Task Tracker <onboarding@resend.dev>"
+   APP_URL=http://localhost:3000
+   ```
+3. restart `pnpm dev`
+
+> `onboarding@resend.dev` ใช้ได้เลยแต่**ส่งได้เฉพาะอีเมลที่คุณใช้สมัคร Resend เท่านั้น**
+> ถ้าจะส่งหาแฟนต้อง verify โดเมนของตัวเองใน Resend ก่อน แล้วเปลี่ยน `MAIL_FROM`
+>
+> `APP_URL` ต้องตรงกับ URL จริงที่เปิดใช้ ไม่งั้นลิงก์ในอีเมลจะกดไม่ได้
+> (จงใจอ่านจาก env ไม่ใช่จาก Host header — ไม่งั้นคนปลอม Host ทำให้ลิงก์ชี้ไปเซิร์ฟเวอร์เขาแล้วดูด token ได้)
 
 ---
 
@@ -75,7 +97,7 @@ pnpm dlx vercel
 
 ```bash
 pnpm dev            # dev server
-pnpm test           # unit test (60 เคส)
+pnpm test           # unit test (86 เคส)
 pnpm test:watch     # test แบบ watch
 pnpm typecheck      # tsc --noEmit
 pnpm lint           # eslint
@@ -127,6 +149,12 @@ memory-hard ทน GPU brute-force เหมือน argon2, และ bcrypt �
 [`todayISO()`](src/lib/tasks.ts) อ่านวันจากเวลาท้องถิ่น ไม่ใช่ `toISOString()`
 (ซึ่งจะทำให้คนไทยกดตอน 00:30 เห็นวันเมื่อวาน)
 
+**reset password** — ขอลิงก์ที่ `/forgot` → ลิงก์อายุ 60 นาที ใช้ได้ครั้งเดียว
+เก็บใน DB เป็น sha256 เหมือน session · ตั้งรหัสใหม่สำเร็จแล้ว **ลบ session ทุกอุปกรณ์ของคนนั้นทิ้ง**
+(ถ้ารหัสเดิมหลุด คนที่ยัง login ค้างต้องหมดสิทธิ์ด้วย) แล้วล็อกอินให้ใหม่ทันที
+หน้า `/forgot` ตอบข้อความเดียวกันเสมอไม่ว่าอีเมลนั้นจะมีบัญชีหรือไม่ และจำกัด 3 ครั้ง/ชั่วโมง/บัญชี
+โดยตอนโดนจำกัดก็ยังตอบข้อความเดิม — ถ้าตอบต่างกัน หน้านี้จะกลายเป็นเครื่องมือไล่เช็คว่าอีเมลไหนสมัครไว้
+
 **ไม่มี realtime** — Prisma ทำ realtime ไม่ได้ [`Board.tsx`](src/components/Board.tsx)
 จึง `router.refresh()` ทุก 15 วิ (เฉพาะตอนแท็บ visible) ซึ่งพอสำหรับใช้กัน 2 คน
 
@@ -136,14 +164,17 @@ memory-hard ทน GPU brute-force เหมือน argon2, และ bcrypt �
 
 ```
 prisma/
-  schema.prisma        โมเดล User / Session / List / ListMember / Task
+  schema.prisma        โมเดล User / Session / PasswordReset / List / ListMember / Task
   migrations/
 src/
   app/
     actions.ts         Server Actions ทั้งหมด (auth + task + sharing)
     board/page.tsx     ดึงข้อมูลฝั่ง server
     login/page.tsx
+    forgot/page.tsx    ขอลิงก์ตั้งรหัสใหม่
+    reset/page.tsx     ตั้งรหัสใหม่จากลิงก์
   components/          Board / TaskItem / NewTaskForm / ShareBox / AuthForm
+                       ForgotForm / ResetForm
   lib/
     tasks.ts           logic บริสุทธิ์: validate, sort, filter, overdue, summary
     types.ts
@@ -152,14 +183,17 @@ src/
       credentials.ts   validate + normalize อีเมล-รหัสผ่าน
       password.ts      scrypt hash/verify + session token
       session.ts       สร้าง/อ่าน/ลบ session (แตะ cookie + DB)
+      reset.ts         logic บริสุทธิ์ของ reset: สถานะ token, rate limit, validate
+      reset-service.ts ออกลิงก์ / ตรวจลิงก์ / เปลี่ยนรหัส (แตะ DB + ส่งอีเมล)
       cookie.ts        ชื่อ cookie เฉยๆ — แยกไว้ให้ Edge import ได้
     db/
       access.ts        requireAccess() — ด่านตรวจสิทธิ์
       lists.ts         query/mutation ทั้งหมด (เรียก assertAccess ก่อนทุกครั้ง)
       map.ts           Prisma row → Task (จัดการเรื่องวันที่)
       prisma.ts        client singleton
+    mail.ts          ประกอบอีเมล + ส่งผ่าน Resend REST API
   middleware.ts        ด่านหน้า: ไม่มี cookie ก็ไม่ให้เข้า /board
-tests/                 60 เคส — logic, สิทธิ์, การแปลงวันที่, hash รหัสผ่าน, validate
+tests/                 86 เคส — logic, สิทธิ์, วันที่, hash รหัสผ่าน, validate, reset token, อีเมล
 ```
 
 ---
@@ -175,4 +209,7 @@ tests/                 60 เคส — logic, สิทธิ์, การแ�
 | สมัครแล้วขึ้น `อีเมลนี้สมัครไว้แล้ว` | มีบัญชีอยู่แล้ว → ไปแท็บเข้าสู่ระบบ (อีเมลไม่สนตัวพิมพ์ใหญ่เล็ก) |
 | แชร์แล้วขึ้น `ยังไม่มีบัญชีอีเมลนี้` | อีกคนยังไม่ได้สมัคร หรือสมัครด้วยอีเมลอื่น |
 | อีกคนเพิ่มงานแล้วไม่เห็น | รอ 15 วิ (auto refresh) หรือ refresh หน้าเอง |
-| ลืมรหัสผ่าน | ยังไม่มีฟีเจอร์ reset (ต้องมี email provider) — แก้ผ่าน `pnpm db:studio` ชั่วคราว |
+| ลืมรหัสผ่านแล้วไม่ได้อีเมล | ยังไม่ได้ตั้ง `RESEND_API_KEY` → ลิงก์อยู่ใน console ของ server (ดูวิธีเปิดอีเมลจริงด้านบน) |
+| กดขอลิงก์รัวๆ แล้วไม่มีอีเมลมา | ถูกจำกัด 3 ครั้ง/ชั่วโมง — รอครบชั่วโมงแล้วขอใหม่ |
+| ลิงก์ reset ขึ้น `ลิงก์นี้ใช้ไม่ได้` | ลิงก์ถูกตัดตอน copy หรือ `APP_URL` ไม่ตรงกับ URL ที่เปิดจริง |
+| dev เห็น `prisma:error ... ConnectionReset` | pooler ตัด connection ที่ idle ทิ้ง Prisma ต่อใหม่เอง ไม่กระทบ request |
