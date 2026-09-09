@@ -7,8 +7,12 @@
     color-scheme: light;
   }
 
+  :root.dark {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-slate-100 text-slate-800 antialiased;
+    @apply bg-slate-100 text-slate-800 antialiased transition-colors dark:bg-slate-950 dark:text-slate-200;
   }
 
   /* iOS ซูมหน้าจอเองเวลา focus input ที่ font เล็กกว่า 16px */
@@ -21,12 +25,14 @@
 
 @layer components {
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900;
   }
 
   .field {
     @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
-      outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100;
+      outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100
+      dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500
+      dark:focus:border-indigo-400 dark:focus:ring-indigo-950;
   }
 
   .btn {
@@ -39,7 +45,8 @@
   }
 
   .btn-ghost {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50
+      dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
   }
 
   .btn-danger {
@@ -48,10 +55,35 @@
 
   .chip {
     @apply inline-flex items-center gap-1 rounded-full border border-slate-200
-      bg-white px-2.5 py-1 text-xs text-slate-600 transition;
+      bg-white px-2.5 py-1 text-xs text-slate-600 transition
+      dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300;
   }
 
   .chip-on {
-    @apply border-slate-900 bg-slate-900 text-white;
+    @apply border-slate-900 bg-slate-900 text-white dark:border-indigo-400 dark:bg-indigo-500;
   }
 }
+
+/* สีพื้นฐานที่ component ใช้ร่วมกัน ให้ทุกหน้ารองรับ dark mode โดยไม่ต้องซ้ำ class */
+:where(.dark) .bg-white { background-color: rgb(15 23 42); }
+:where(.dark) .bg-slate-50 { background-color: rgb(15 23 42); }
+:where(.dark) .bg-slate-100 { background-color: rgb(30 41 59); }
+:where(.dark) .bg-slate-200 { background-color: rgb(51 65 85); }
+:where(.dark) [class~="bg-slate-50/70"],
+:where(.dark) [class~="bg-slate-100/70"],
+:where(.dark) [class~="bg-slate-200/60"] { background-color: rgb(30 41 59 / .72); }
+:where(.dark) .text-slate-900, :where(.dark) .text-slate-800 { color: rgb(241 245 249); }
+:where(.dark) .text-slate-700, :where(.dark) .text-slate-600 { color: rgb(203 213 225); }
+:where(.dark) .text-slate-500 { color: rgb(148 163 184); }
+:where(.dark) .text-slate-400 { color: rgb(100 116 139); }
+:where(.dark) .border-slate-100, :where(.dark) .border-slate-200 { border-color: rgb(51 65 85); }
+:where(.dark) .border-slate-300 { border-color: rgb(71 85 105); }
+:where(.dark) .bg-indigo-50 { background-color: rgb(49 46 129 / .35); }
+:where(.dark) .bg-indigo-100 { background-color: rgb(49 46 129 / .55); }
+:where(.dark) .text-indigo-600, :where(.dark) .text-indigo-700 { color: rgb(165 180 252); }
+:where(.dark) .bg-rose-50 { background-color: rgb(76 5 25 / .4); }
+:where(.dark) .text-rose-600, :where(.dark) .text-rose-700 { color: rgb(253 164 175); }
+:where(.dark) .bg-amber-50 { background-color: rgb(69 26 3 / .45); }
+:where(.dark) .text-amber-700 { color: rgb(252 211 77); }
+:where(.dark) .bg-emerald-50 { background-color: rgb(2 44 34 / .45); }
+:where(.dark) .text-emerald-600, :where(.dark) .text-emerald-700, :where(.dark) .text-emerald-800 { color: rgb(110 231 183); }

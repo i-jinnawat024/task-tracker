@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
+import ThemeToggle from "@/components/ThemeToggle";
 import "./globals.css";
 
 // next/font โหลดไฟล์ฟอนต์ตอน build แล้ว self-host ให้เอง
@@ -23,9 +24,21 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const themeScript = `
+    try {
+      const saved = localStorage.getItem("task-tracker-theme");
+      const dark = saved === "dark" || (!saved && matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.classList.toggle("dark", dark);
+    } catch {}
+  `;
+
   return (
-    <html lang="th" className={notoSansThai.variable}>
-      <body className="font-sans">{children}</body>
+    <html lang="th" className={notoSansThai.variable} suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
+      <body className="font-sans">
+        {children}
+        <ThemeToggle />
+      </body>
     </html>
   );
 }
