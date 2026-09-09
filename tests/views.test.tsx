@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
 import type { Task } from "@/lib/types";
 import KanbanView from "@/components/KanbanView";
 import GanttView from "@/components/GanttView";
@@ -8,12 +7,7 @@ import GanttView from "@/components/GanttView";
 const { setStatusAction } = vi.hoisted(() => ({ setStatusAction: vi.fn() }));
 vi.mock("@/app/actions", () => ({ setStatusAction }));
 vi.mock("@/components/TaskItem", () => ({
-  default: ({ task, footer }: { task: Task; footer?: ReactNode }) => (
-    <li>
-      {task.title}
-      {footer}
-    </li>
-  ),
+  default: ({ task }: { task: Task }) => <li>{task.title}</li>,
 }));
 const task: Task = {
   id: "1", list_id: "list", title: "Design review", status: "todo", priority: "medium",
@@ -25,11 +19,18 @@ afterEach(cleanup);
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe("task views", () => {
-  it("supports moving a Kanban card without drag and drop and shows server failures", async () => {
+  it("moves a Kanban card via drag and drop and shows server failures", async () => {
     setStatusAction.mockResolvedValue({ ok: false, message: "ไม่มีสิทธิ์" });
     render(<KanbanView tasks={[task]} today="2026-09-08" />);
-    fireEvent.click(screen.getByRole("button", { name: "สถานะ Design review" }));
-    fireEvent.click(screen.getByRole("option", { name: /กำลังทำ/ }));
+
+    const card = screen.getByText("Design review").closest("[draggable]") as HTMLElement;
+    const dataTransfer = { setData: vi.fn(), effectAllowed: "" };
+    fireEvent.dragStart(card, { dataTransfer });
+
+    const doingColumn = screen.getByText("กำลังทำ").closest("section") as HTMLElement;
+    fireEvent.dragOver(doingColumn, { dataTransfer });
+    fireEvent.drop(doingColumn, { dataTransfer });
+
     await waitFor(() => expect(setStatusAction).toHaveBeenCalledWith("1", "doing"));
     expect((await screen.findByRole("alert")).textContent).toContain("ไม่มีสิทธิ์");
   });

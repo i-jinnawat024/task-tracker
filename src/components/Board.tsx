@@ -12,6 +12,7 @@ import {
   todayISO,
 } from "@/lib/tasks";
 import type { ListMember, Status, Task, TaskList } from "@/lib/types";
+import FiltersPanel from "./FiltersPanel";
 import ListSwitcher from "./ListSwitcher";
 import NewTaskForm from "./NewTaskForm";
 import ShareBox from "./ShareBox";
@@ -27,13 +28,6 @@ type Props = {
   members: ListMember[];
   today: string;
 };
-
-const STATUS_TABS: { value: Status | "open" | "all"; label: string }[] = [
-  { value: "open", label: "ที่ต้องทำ" },
-  { value: "doing", label: "กำลังทำ" },
-  { value: "done", label: "เสร็จแล้ว" },
-  { value: "all", label: "ทั้งหมด" },
-];
 
 const AUTO_REFRESH_MS = 15_000;
 
@@ -67,6 +61,9 @@ export default function Board({
   const [tag, setTag] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
+  const [dueFrom, setDueFrom] = useState("");
+  const [dueTo, setDueTo] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // แทน realtime ของ Supabase: ดึงข้อมูลใหม่เป็นระยะ ให้เห็นงานที่อีกคนเพิ่ม
   // ใช้กัน 2 คน 15 วิ/ครั้งถือว่าคุ้มกว่าการต้องเปิด RLS + websocket ทั้งชุด
@@ -80,9 +77,18 @@ export default function Board({
   const summary = useMemo(() => summarize(tasks, today), [tasks, today]);
   const allTags = useMemo(() => collectTags(tasks), [tasks]);
   const visible = useMemo(
-    () => sortTasks(filterTasks(tasks, { status, tag, search, overdueOnly }, today), today),
-    [tasks, status, tag, search, overdueOnly, today],
+    () => sortTasks(filterTasks(tasks, { status, tag, search, overdueOnly, dueFrom, dueTo }, today), today),
+    [tasks, status, tag, search, overdueOnly, dueFrom, dueTo, today],
   );
+  const activeFilterCount = Number(status !== "all") + Number(Boolean(tag)) + Number(overdueOnly) + Number(Boolean(dueFrom || dueTo));
+  function clearFilters() {
+    setStatus("all");
+    setOverdueOnly(false);
+    setDueFrom("");
+    setDueTo("");
+  }
+  const doneWidth = summary.total ? (summary.done / summary.total) * 100 : 0;
+  const doingWidth = summary.total ? (summary.doing / summary.total) * 100 : 0;
 
   return (
     <main className={`mx-auto px-3 pb-20 pt-3 sm:px-6 sm:pb-24 sm:pt-5 ${view === "list" ? "max-w-3xl" : "max-w-7xl"}`}>
@@ -123,29 +129,27 @@ export default function Board({
         </div>
       </header>
 
-      <section className="card mb-3 p-3 sm:mb-4 sm:p-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-2xl font-bold leading-none text-slate-900 sm:text-3xl">
-              {summary.done}
-              <span className="text-base font-medium text-slate-400"> / {summary.total}</span>
-            </p>
-            <p className="mt-1 text-xs text-slate-500">งานที่เสร็จแล้ว</p>
-          </div>
-          <div className="text-right text-xs">
-            {summary.overdue > 0 ? (
-              <p className="font-semibold text-rose-600">เลยกำหนด {summary.overdue} งาน</p>
-            ) : (
-              <p className="text-emerald-600">ไม่มีงานเลยกำหนด 🎉</p>
-            )}
-            <p className="mt-1 text-slate-400">{summary.percentDone}% เสร็จแล้ว</p>
-          </div>
+      <section className="card mb-3 p-3 sm:mb-4 sm:p-4" aria-label="สรุปงาน">
+        <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700">
+          {([
+            ["งานทั้งหมด", summary.total, "text-slate-900"],
+            ["เสร็จแล้ว", summary.done, "text-emerald-600"],
+            ["เกินกำหนด", summary.overdue, summary.overdue ? "text-rose-600" : "text-slate-900"],
+          ] as const).map(([label, value, color]) => (
+            <div key={label} className="px-2 first:pl-0 last:pr-0 sm:px-4">
+              <p className={`text-xl font-bold tabular-nums sm:text-2xl ${color}`}>{value}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500 sm:text-xs">{label}</p>
+            </div>
+          ))}
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
-          <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-            style={{ width: `${summary.percentDone}%` }}
-          />
+        <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-slate-200" aria-label={`กำลังทำ ${summary.doing} งาน เสร็จแล้ว ${summary.done} งาน`}>
+          <div className="h-full bg-amber-400 transition-all duration-300" style={{ width: `${doingWidth}%` }} />
+          <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${doneWidth}%` }} />
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-400" />กำลังทำ {summary.doing}</span>
+          <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" />เสร็จแล้ว {summary.done} ({summary.percentDone}%)</span>
+          <span className="ml-auto text-slate-400">เหลือ {summary.todo}</span>
         </div>
       </section>
 
@@ -158,42 +162,46 @@ export default function Board({
           <div className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-white p-1 sm:flex sm:w-auto" aria-label="มุมมองงาน">
             {([['kanban', 'Kanban'], ['gantt', 'Gantt chart'], ['list', 'List']] as const).map(([value, label]) => (
               <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}
-                className={`rounded-lg px-2 py-2 text-xs font-medium transition sm:px-4 sm:text-sm ${view === value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
+                className={`rounded-lg px-2 py-2 text-xs font-medium transition sm:px-4 sm:text-sm ${view === value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-700'}`}>
                 {label}
               </button>
             ))}
           </div>
           <span className="self-end text-[11px] text-slate-500 sm:self-auto sm:text-xs">แสดง {visible.length} จาก {tasks.length} งาน</span>
         </div>
-        <div className="flex gap-1 rounded-lg bg-slate-200/60 p-1">
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setStatus(tab.value)}
-              className={`min-w-0 flex-1 rounded-md px-1 py-1.5 text-[11px] font-medium transition sm:text-xs ${
-                status === tab.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ค้นหางาน…"
             className="field min-w-0 flex-1 py-1.5 text-xs"
           />
-          <button
-            type="button"
-            onClick={() => setOverdueOnly((v) => !v)}
-            className={`chip ${overdueOnly ? "chip-on" : ""}`}
-          >
-            เลยกำหนด
-          </button>
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((value) => !value)}
+              aria-expanded={filtersOpen}
+              className={`btn-ghost relative py-1.5 text-xs ${filtersOpen || activeFilterCount ? "border-indigo-300 text-indigo-700" : ""}`}
+            >
+              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden><path d="M3 5h14M5.5 10h9M8 15h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              ตัวกรอง
+              {activeFilterCount > 0 && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-indigo-600 px-1 text-[9px] text-white">{activeFilterCount}</span>}
+            </button>
+            {filtersOpen && (
+              <FiltersPanel
+                status={status}
+                onStatusChange={setStatus}
+                overdueOnly={overdueOnly}
+                onOverdueOnlyChange={setOverdueOnly}
+                dueFrom={dueFrom}
+                onDueFromChange={setDueFrom}
+                dueTo={dueTo}
+                onDueToChange={setDueTo}
+                onClear={clearFilters}
+                onClose={() => setFiltersOpen(false)}
+              />
+            )}
+          </div>
         </div>
 
         {allTags.length > 0 && (

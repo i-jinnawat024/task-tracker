@@ -1,15 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition, type ReactNode } from "react";
-import {
-  deleteTaskAction,
-  editTask,
-  setStatusAction,
-  toggleTaskAction,
-  type ActionState,
-} from "@/app/actions";
+import { useState, useTransition, type KeyboardEvent } from "react";
+import { toggleTaskAction } from "@/app/actions";
 import { daysBetween, dueBucket } from "@/lib/tasks";
-import { PRIORITIES, TASK_TYPES, type DueBucket, type ListMember, type Task } from "@/lib/types";
+import type { DueBucket, ListMember, Task } from "@/lib/types";
+import TaskDetailModal from "./TaskDetailModal";
 
 const BUCKET_STYLE: Record<DueBucket, string> = {
   overdue: "bg-rose-50 text-rose-700 border-rose-200",
@@ -19,9 +14,11 @@ const BUCKET_STYLE: Record<DueBucket, string> = {
   none: "",
 };
 
+// สีต้องไม่ซ้ำกับสีสถานะ (todo=slate, doing=amber, done=emerald) ไม่งั้นจุด priority
+// กับ chip "กำลังทำ" จะดูเป็นความหมายเดียวกันจนแยกไม่ออก
 const PRIORITY_STYLE: Record<string, string> = {
   high: "bg-rose-500",
-  medium: "bg-amber-400",
+  medium: "bg-sky-400",
   low: "bg-slate-300",
 };
 
@@ -57,117 +54,23 @@ export default function TaskItem({
   task,
   today,
   members = [],
-  footer,
 }: {
   task: Task;
   today: string;
   members?: ListMember[];
-  /** แถบท้ายการ์ด ต่อท้ายในกรอบเดียวกัน (เช่น dropdown ย้ายสถานะของ Kanban) */
-  footer?: ReactNode;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [pendingMutation, startMutation] = useTransition();
-  const [state, formAction, saving] = useActionState<ActionState, FormData>(editTask, null);
-
-  useEffect(() => {
-    if (state?.ok) setEditing(false);
-  }, [state]);
 
   const bucket = dueBucket(task, today);
   const done = task.status === "done";
   const assignee = members.find((member) => member.user_id === task.assignee_id);
 
-  if (editing) {
-    return (
-      <li className="card p-3">
-        <form action={formAction} className="space-y-2.5">
-          <input type="hidden" name="task_id" value={task.id} />
-
-          <input name="title" defaultValue={task.title} required maxLength={200} className="field" />
-          {state?.errors?.title && <p className="text-xs text-rose-600">{state.errors.title}</p>}
-
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <label className="block">
-              <span className="mb-1 block text-xs text-slate-500">ประเภท</span>
-              <select name="task_type" defaultValue={task.task_type} className="field py-1.5 text-xs">
-                {TASK_TYPES.map((type) => <option key={type} value={type}>{TYPE_LABEL[type]}</option>)}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs text-slate-500">สถานะ</span>
-              <select name="status" defaultValue={task.status} className="field py-1.5 text-xs">
-                <option value="todo">ที่ต้องทำ</option>
-                <option value="doing">กำลังทำ</option>
-                <option value="done">เสร็จแล้ว</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs text-slate-500">ความสำคัญ</span>
-              <select name="priority" defaultValue={task.priority} className="field py-1.5 text-xs">
-                {PRIORITIES.map((p) => (
-                  <option key={p} value={p}>
-                    {PRIORITY_LABEL[p]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs text-slate-500">วันเริ่ม</span>
-              <input type="date" name="start_date" defaultValue={task.start_date ?? ""} className="field py-1.5 text-xs" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs text-slate-500">กำหนดเสร็จ</span>
-              <input
-                type="date"
-                name="due_date"
-                defaultValue={task.due_date ?? ""}
-                className="field py-1.5 text-xs"
-              />
-            </label>
-          </div>
-
-          <label className="block">
-            <span className="mb-1 block text-xs text-slate-500">ผู้รับผิดชอบ</span>
-            <select name="assignee_id" defaultValue={task.assignee_id ?? ""} className="field py-1.5 text-xs">
-              <option value="">ยังไม่ระบุ</option>
-              {members.map((member) => <option key={member.user_id} value={member.user_id}>{member.display_name ?? member.email ?? "สมาชิก"}</option>)}
-            </select>
-          </label>
-
-          <input
-            name="tags"
-            defaultValue={task.tags.join(", ")}
-            placeholder="แท็ก คั่นด้วย ,"
-            className="field py-1.5 text-xs"
-          />
-          <textarea
-            name="notes"
-            defaultValue={task.notes ?? ""}
-            rows={2}
-            placeholder="รายละเอียด"
-            className="field text-xs"
-          />
-
-          {state?.message && !state.ok && (
-            <p className="text-xs text-rose-600">{state.message}</p>
-          )}
-
-          <div className="flex gap-2">
-            <button type="submit" disabled={saving} className="btn-primary py-1.5 text-xs">
-              {saving ? "กำลังบันทึก…" : "บันทึก"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="btn-ghost py-1.5 text-xs"
-            >
-              ยกเลิก
-            </button>
-          </div>
-        </form>
-      </li>
-    );
+  function onCardKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setDetailOpen(true);
+    }
   }
 
   return (
@@ -176,11 +79,20 @@ export default function TaskItem({
         pendingMutation ? "opacity-50" : ""
       } ${bucket === "overdue" ? "border-l-4 border-l-rose-400" : ""}`}
     >
-      <div className="flex items-start gap-2.5 p-3 sm:gap-3">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setDetailOpen(true)}
+        onKeyDown={onCardKeyDown}
+        className="flex cursor-pointer items-start gap-2.5 rounded-xl p-3 transition hover:bg-slate-50 sm:gap-3 dark:hover:bg-slate-800/60"
+      >
         <button
           type="button"
           aria-label={done ? "ทำเครื่องหมายว่ายังไม่เสร็จ" : "ทำเครื่องหมายว่าเสร็จ"}
-          onClick={() => startMutation(() => void toggleTaskAction(task.id))}
+          onClick={(event) => {
+            event.stopPropagation();
+            startMutation(() => void toggleTaskAction(task.id));
+          }}
           className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition ${
             done
               ? "border-emerald-500 bg-emerald-500 text-white"
@@ -238,58 +150,15 @@ export default function TaskItem({
             )}
           </div>
         </div>
-
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <div className="flex gap-0.5">
-            {!done && task.status !== "doing" && (
-              <button
-                type="button"
-                onClick={() => startMutation(() => void setStatusAction(task.id, "doing"))}
-                className="btn-ghost border-0 px-1.5 py-1 text-[11px] text-slate-500 sm:px-2 sm:text-xs"
-              >
-                เริ่มทำ
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="btn-ghost border-0 px-1.5 py-1 text-[11px] text-slate-500 sm:px-2 sm:text-xs"
-            >
-              แก้
-            </button>
-          </div>
-
-          {confirmingDelete ? (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => startMutation(() => void deleteTaskAction(task.id))}
-                className="btn-danger px-2 py-1 text-xs font-semibold"
-              >
-                ลบจริง
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingDelete(false)}
-                className="px-1 text-xs text-slate-400"
-              >
-                ไม่
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmingDelete(true)}
-              className="btn-danger px-2 py-1 text-xs"
-            >
-              ลบ
-            </button>
-          )}
-        </div>
       </div>
 
-      {footer && (
-        <div className="border-t border-slate-100 bg-slate-50/70 px-3 py-1.5">{footer}</div>
+      {detailOpen && (
+        <TaskDetailModal
+          task={task}
+          today={today}
+          members={members}
+          onClose={() => setDetailOpen(false)}
+        />
       )}
     </li>
   );

@@ -63,4 +63,6 @@ export type TaskFilters = {
   tag?: string | null;
   search?: string;
   overdueOnly?: boolean;
+  dueFrom?: string | null;
+  dueTo?: string | null;
 };

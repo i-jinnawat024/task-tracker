@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { setStatusAction } from "@/app/actions";
 import type { ListMember, Status, Task } from "@/lib/types";
 import TaskItem from "./TaskItem";
-import StatusPicker from "./StatusPicker";
 
 const columns: { status: Status; label: string; color: string }[] = [
   { status: "todo", label: "ที่ต้องทำ", color: "bg-slate-400" },
@@ -32,9 +31,9 @@ export default function KanbanView({ tasks, today, members = [] }: { tasks: Task
   }
 
   return <section aria-label="Kanban" aria-busy={pending}>
-    <p className="mb-3 text-xs text-slate-500">ลากการ์ดข้ามคอลัมน์ หรือเลือกสถานะใต้การ์ดเพื่อย้ายงาน</p>
+    <p className="mb-3 text-xs text-slate-500">ลากการ์ดข้ามคอลัมน์เพื่อย้ายงาน หรือกดการ์ดเพื่อแก้สถานะในรายละเอียดงาน</p>
     {error && <p role="alert" className="mb-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-    <div className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2 sm:-mx-6 sm:gap-4 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0">
+    <div className="no-scrollbar -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2 sm:-mx-6 sm:gap-4 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0">
       {columns.map((column) => {
         const items = tasks.filter((task) => task.status === column.status);
         return <section key={column.status}
@@ -51,22 +50,7 @@ export default function KanbanView({ tasks, today, members = [] }: { tasks: Task
               onDragStart={(event) => { event.dataTransfer.setData('text/plain', task.id); event.dataTransfer.effectAllowed = 'move'; setDragged(task.id); }}
               onDragEnd={() => { setDragged(null); setOver(null); }}
               className={dragged === task.id ? 'opacity-50' : ''}>
-              <TaskItem
-                task={task}
-                today={today}
-                members={members}
-                footer={
-                  <div className="flex items-center justify-end gap-2 text-xs text-slate-400">
-                    <span>ย้ายไป</span>
-                    <StatusPicker
-                      label={`สถานะ ${task.title}`}
-                      value={task.status}
-                      disabled={pending}
-                      onChange={(status) => move(task.id, status)}
-                    />
-                  </div>
-                }
-              />
+              <TaskItem task={task} today={today} members={members} />
             </div>)}
             {!items.length && <p className="rounded-xl border border-dashed border-slate-300 py-8 text-center text-xs text-slate-400 sm:py-10">ยังไม่มีงานในสถานะนี้</p>}
           </ul>

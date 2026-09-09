@@ -207,6 +207,9 @@ export function filterTasks(
 
     if (filters.overdueOnly && !isOverdue(task, today)) return false;
 
+    if (filters.dueFrom && (!task.due_date || task.due_date < filters.dueFrom)) return false;
+    if (filters.dueTo && (!task.due_date || task.due_date > filters.dueTo)) return false;
+
     return true;
   });
 }
