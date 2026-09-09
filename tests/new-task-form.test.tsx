@@ -26,7 +26,7 @@ describe("NewTaskForm", () => {
     expect(screen.getByLabelText("กำหนดเสร็จ")).toBeTruthy();
     expect(screen.getByText("ความสำคัญ")).toBeTruthy();
     expect(screen.getByText("ผู้รับผิดชอบ")).toBeTruthy();
-    expect(screen.getByLabelText(/แท็ก/)).toBeTruthy();
+    expect(screen.getByLabelText("เพิ่มแท็ก")).toBeTruthy();
     expect(screen.getByLabelText("รายละเอียด")).toBeTruthy();
   });
 
@@ -36,9 +36,16 @@ describe("NewTaskForm", () => {
     fireEvent.click(screen.getByRole("button", { name: /เพิ่มงาน/ }));
 
     fireEvent.change(screen.getByLabelText("ชื่องาน"), { target: { value: "ซื้อของ" } });
-    fireEvent.change(screen.getByLabelText("กำหนดเสร็จ"), { target: { value: "2026-09-20" } });
-    fireEvent.click(screen.getByLabelText("สำคัญมาก"));
-    fireEvent.change(screen.getByLabelText(/แท็ก/), { target: { value: "บ้าน, งาน" } });
+    fireEvent.click(screen.getByRole("button", { name: "กำหนดเสร็จ" }));
+    fireEvent.click(screen.getByRole("button", { name: "2026-09-20" }));
+    fireEvent.click(screen.getByRole("button", { name: "ความสำคัญ" }));
+    fireEvent.click(screen.getByRole("option", { name: "สำคัญมาก" }));
+
+    const tagInput = screen.getByLabelText("เพิ่มแท็ก");
+    fireEvent.change(tagInput, { target: { value: "บ้าน" } });
+    fireEvent.keyDown(tagInput, { key: "Enter" });
+    fireEvent.change(tagInput, { target: { value: "งาน" } });
+    fireEvent.keyDown(tagInput, { key: "Enter" });
     fireEvent.change(screen.getByLabelText("รายละเอียด"), { target: { value: "รายละเอียดงาน" } });
     fireEvent.click(screen.getByRole("button", { name: "เพิ่ม" }));
 
@@ -50,7 +57,7 @@ describe("NewTaskForm", () => {
     expect(formData.get("priority")).toBe("high");
     expect(formData.get("task_type")).toBe("task");
     expect(formData.get("status")).toBe("todo");
-    expect(formData.get("tags")).toBe("บ้าน, งาน");
+    expect(formData.get("tags")).toBe("บ้าน,งาน");
     expect(formData.get("notes")).toBe("รายละเอียดงาน");
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());

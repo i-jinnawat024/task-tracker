@@ -12,7 +12,7 @@
   }
 
   body {
-    @apply bg-slate-100 text-slate-800 antialiased transition-colors dark:bg-slate-950 dark:text-slate-200;
+    @apply min-h-screen bg-slate-100 text-slate-800 antialiased transition-colors duration-200 dark:bg-slate-950 dark:text-slate-200;
   }
 
   /* iOS ซูมหน้าจอเองเวลา focus input ที่ font เล็กกว่า 16px */
@@ -87,3 +87,13 @@
 :where(.dark) .text-amber-700 { color: rgb(252 211 77); }
 :where(.dark) .bg-emerald-50 { background-color: rgb(2 44 34 / .45); }
 :where(.dark) .text-emerald-600, :where(.dark) .text-emerald-700, :where(.dark) .text-emerald-800 { color: rgb(110 231 183); }
+:where(.dark) .bg-sky-50 { background-color: rgb(8 47 73 / .5); }
+:where(.dark) .text-sky-700 { color: rgb(125 211 252); }
+:where(.dark) .border-sky-200 { border-color: rgb(7 89 133); }
+:where(.dark) .bg-violet-50 { background-color: rgb(46 16 101 / .45); }
+:where(.dark) .text-violet-600 { color: rgb(196 181 253); }
+:where(.dark) .border-violet-100 { border-color: rgb(91 33 182 / .7); }
+:where(.dark) .border-indigo-100, :where(.dark) .border-indigo-200 { border-color: rgb(67 56 202 / .65); }
+:where(.dark) .border-amber-200 { border-color: rgb(146 64 14); }
+:where(.dark) .border-rose-200 { border-color: rgb(159 18 57 / .75); }
+:where(.dark) .hover\:bg-slate-50:hover { background-color: rgb(30 41 59); }

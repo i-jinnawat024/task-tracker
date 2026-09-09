@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#4338ca",
+  themeColor: "#f1f5f9",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       const saved = localStorage.getItem("task-tracker-theme");
       const dark = saved === "dark" || (!saved && matchMedia("(prefers-color-scheme: dark)").matches);
       document.documentElement.classList.toggle("dark", dark);
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#020617" : "#f1f5f9");
     } catch {}
   `;
 
