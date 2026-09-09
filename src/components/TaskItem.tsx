@@ -176,7 +176,7 @@ export default function TaskItem({
         pendingMutation ? "opacity-50" : ""
       } ${bucket === "overdue" ? "border-l-4 border-l-rose-400" : ""}`}
     >
-      <div className="flex items-start gap-3 p-3">
+      <div className="flex items-start gap-2.5 p-3 sm:gap-3">
         <button
           type="button"
           aria-label={done ? "ทำเครื่องหมายว่ายังไม่เสร็จ" : "ทำเครื่องหมายว่าเสร็จ"}
@@ -216,7 +216,7 @@ export default function TaskItem({
             </p>
           )}
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-4">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-0 sm:gap-1.5 sm:pl-4">
             {task.task_type !== "task" && (
               <span className="chip border-indigo-100 bg-indigo-50 text-indigo-600">{TYPE_LABEL[task.task_type]}</span>
             )}
@@ -245,7 +245,7 @@ export default function TaskItem({
               <button
                 type="button"
                 onClick={() => startMutation(() => void setStatusAction(task.id, "doing"))}
-                className="btn-ghost border-0 px-2 py-1 text-xs text-slate-500"
+                className="btn-ghost border-0 px-1.5 py-1 text-[11px] text-slate-500 sm:px-2 sm:text-xs"
               >
                 เริ่มทำ
               </button>
@@ -253,7 +253,7 @@ export default function TaskItem({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="btn-ghost border-0 px-2 py-1 text-xs text-slate-500"
+              className="btn-ghost border-0 px-1.5 py-1 text-[11px] text-slate-500 sm:px-2 sm:text-xs"
             >
               แก้
             </button>

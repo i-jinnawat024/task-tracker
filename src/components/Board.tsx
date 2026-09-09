@@ -85,18 +85,18 @@ export default function Board({
   );
 
   return (
-    <main className={`mx-auto px-4 pb-24 pt-5 sm:px-6 ${view === "list" ? "max-w-3xl" : "max-w-7xl"}`}>
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div>
-          <h1 className="text-xl font-bold text-slate-900">{activeList.name}</h1>
+    <main className={`mx-auto px-3 pb-20 pt-3 sm:px-6 sm:pb-24 sm:pt-5 ${view === "list" ? "max-w-3xl" : "max-w-7xl"}`}>
+      <header className="mb-3 flex items-start justify-between gap-2 sm:mb-4 sm:items-center sm:gap-3">
+        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+          <div className="min-w-0">
+          <h1 className="truncate text-lg font-bold text-slate-900 sm:text-xl">{activeList.name}</h1>
           <p className="mt-0.5 text-xs text-slate-500">
             {user.displayName ?? user.email}
             {members.length > 1 && ` · แชร์กับ ${members.length - 1} คน`}
           </p>
           </div>
           {now && (
-            <div className="hidden border-l border-slate-300 pl-3 sm:block" aria-label="วันเวลาปัจจุบัน">
+            <div className="hidden shrink-0 border-l border-slate-300 pl-3 min-[430px]:block" aria-label="วันเวลาปัจจุบัน">
               <p className="text-xs font-medium text-slate-600">
                 {now.toLocaleDateString("th-TH", { weekday: "short", day: "numeric", month: "short" })}
               </p>
@@ -106,7 +106,7 @@ export default function Board({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {lists.length > 1 && (
             <ListSwitcher
               lists={lists}
@@ -115,17 +115,18 @@ export default function Board({
             />
           )}
           <form action={signOut}>
-            <button type="submit" className="btn-ghost py-1.5 text-xs">
-              ออกจากระบบ
+            <button type="submit" className="btn-ghost px-2.5 py-1.5 text-xs sm:px-3.5">
+              <span className="hidden min-[390px]:inline">ออกจากระบบ</span>
+              <span className="min-[390px]:hidden" aria-hidden>ออก</span>
             </button>
           </form>
         </div>
       </header>
 
-      <section className="card mb-4 p-4">
+      <section className="card mb-3 p-3 sm:mb-4 sm:p-4">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-3xl font-bold leading-none text-slate-900">
+            <p className="text-2xl font-bold leading-none text-slate-900 sm:text-3xl">
               {summary.done}
               <span className="text-base font-medium text-slate-400"> / {summary.total}</span>
             </p>
@@ -153,16 +154,16 @@ export default function Board({
       </div>
 
       <div className="mb-3 mt-5 space-y-2.5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1" aria-label="มุมมองงาน">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+          <div className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-white p-1 sm:flex sm:w-auto" aria-label="มุมมองงาน">
             {([['kanban', 'Kanban'], ['gantt', 'Gantt chart'], ['list', 'List']] as const).map(([value, label]) => (
               <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${view === value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
+                className={`rounded-lg px-2 py-2 text-xs font-medium transition sm:px-4 sm:text-sm ${view === value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
                 {label}
               </button>
             ))}
           </div>
-          <span className="text-xs text-slate-500">แสดง {visible.length} จาก {tasks.length} งาน</span>
+          <span className="self-end text-[11px] text-slate-500 sm:self-auto sm:text-xs">แสดง {visible.length} จาก {tasks.length} งาน</span>
         </div>
         <div className="flex gap-1 rounded-lg bg-slate-200/60 p-1">
           {STATUS_TABS.map((tab) => (
@@ -170,7 +171,7 @@ export default function Board({
               key={tab.value}
               type="button"
               onClick={() => setStatus(tab.value)}
-              className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
+              className={`min-w-0 flex-1 rounded-md px-1 py-1.5 text-[11px] font-medium transition sm:text-xs ${
                 status === tab.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
               }`}
             >
@@ -184,7 +185,7 @@ export default function Board({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ค้นหางาน…"
-            className="field flex-1 py-1.5 text-xs"
+            className="field min-w-0 flex-1 py-1.5 text-xs"
           />
           <button
             type="button"

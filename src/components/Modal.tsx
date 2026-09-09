@@ -21,7 +21,7 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
@@ -29,7 +29,7 @@ export default function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
-        className="card max-h-[90vh] w-full max-w-lg overflow-y-auto p-5"
+        className="card max-h-dvh w-full max-w-lg overflow-y-auto rounded-b-none p-4 sm:max-h-[90vh] sm:rounded-xl sm:p-5"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-slate-900">{title}</h2>

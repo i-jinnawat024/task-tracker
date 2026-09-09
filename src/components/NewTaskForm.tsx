@@ -83,7 +83,7 @@ export default function NewTaskForm({ listId, members = [] }: { listId: string; 
 
             <fieldset>
               <legend className="mb-1.5 text-xs font-medium text-slate-600">ประเภทงาน</legend>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                 {TYPE_OPTIONS.map(([value, label]) => (
                   <label key={value} className="cursor-pointer">
                     <input type="radio" name="task_type" value={value} defaultChecked={value === "task"} className="peer sr-only" />
@@ -95,7 +95,7 @@ export default function NewTaskForm({ listId, members = [] }: { listId: string; 
               </div>
             </fieldset>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <DatePicker name="start_date" label="วันเริ่ม" />
               <DatePicker name="due_date" label="กำหนดเสร็จ" />
             </div>
@@ -104,7 +104,7 @@ export default function NewTaskForm({ listId, members = [] }: { listId: string; 
               <p className="text-xs text-rose-600">{state.errors.due_date}</p>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
               <FormSelect name="status" label="สถานะเริ่มต้น" defaultValue="todo" options={STATUS_OPTIONS} />
               <FormSelect name="priority" label="ความสำคัญ" defaultValue="medium" options={PRIORITY_OPTIONS} />
             </div>
@@ -138,7 +138,7 @@ export default function NewTaskForm({ listId, members = [] }: { listId: string; 
               <p className="text-xs text-rose-600">{state.message}</p>
             )}
 
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="sticky bottom-0 -mx-4 flex justify-end gap-2 border-t border-slate-100 bg-white/95 px-4 pb-0 pt-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pt-1 dark:bg-slate-900/95 sm:dark:bg-transparent">
               <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
                 ยกเลิก
               </button>

@@ -34,19 +34,19 @@ export default function KanbanView({ tasks, today, members = [] }: { tasks: Task
   return <section aria-label="Kanban" aria-busy={pending}>
     <p className="mb-3 text-xs text-slate-500">ลากการ์ดข้ามคอลัมน์ หรือเลือกสถานะใต้การ์ดเพื่อย้ายงาน</p>
     {error && <p role="alert" className="mb-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-2 sm:-mx-6 sm:gap-4 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0 lg:pb-0">
       {columns.map((column) => {
         const items = tasks.filter((task) => task.status === column.status);
         return <section key={column.status}
           onDragOver={(event) => { if (dragged && !pending) { event.preventDefault(); setOver(column.status); } }}
           onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null); }}
           onDrop={(event) => { event.preventDefault(); if (dragged) move(dragged, column.status); setDragged(null); setOver(null); }}
-          className={`min-w-0 rounded-2xl border p-3 transition ${over === column.status ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-slate-100/70'}`}>
+          className={`w-[86vw] max-w-sm shrink-0 snap-start rounded-2xl border p-3 transition sm:w-[58vw] lg:w-auto lg:max-w-none lg:min-w-0 ${over === column.status ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-slate-100/70'}`}>
           <h2 className="mb-4 flex items-center gap-2 px-1 text-sm font-semibold text-slate-700">
             <span className={`h-2.5 w-2.5 rounded-full ${column.color}`} />{column.label}
             <span className="ml-auto rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{items.length}</span>
           </h2>
-          <ul className="min-h-32 space-y-3">
+          <ul className="min-h-24 space-y-3 sm:min-h-32">
             {items.map((task) => <div key={task.id} draggable={!pending}
               onDragStart={(event) => { event.dataTransfer.setData('text/plain', task.id); event.dataTransfer.effectAllowed = 'move'; setDragged(task.id); }}
               onDragEnd={() => { setDragged(null); setOver(null); }}
@@ -68,7 +68,7 @@ export default function KanbanView({ tasks, today, members = [] }: { tasks: Task
                 }
               />
             </div>)}
-            {!items.length && <p className="rounded-xl border border-dashed border-slate-300 py-10 text-center text-xs text-slate-400">ยังไม่มีงานในสถานะนี้</p>}
+            {!items.length && <p className="rounded-xl border border-dashed border-slate-300 py-8 text-center text-xs text-slate-400 sm:py-10">ยังไม่มีงานในสถานะนี้</p>}
           </ul>
         </section>;
       })}

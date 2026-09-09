@@ -61,25 +61,23 @@ export default function ThemeToggle() {
       aria-checked={dark}
       aria-label={dark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
       title={dark ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
-      className="fixed bottom-4 right-4 z-[60] inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-lg transition hover:-translate-y-0.5 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-500"
+      className="fixed bottom-3 right-3 z-40 inline-flex h-11 items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 p-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-300 sm:bottom-4 sm:right-4 sm:pr-3 dark:border-slate-600/80 dark:bg-slate-800/90 dark:shadow-black/30"
     >
-      <svg viewBox="0 0 20 20" fill="none" className={`h-4 w-4 ${dark ? "text-slate-500" : "text-amber-500"}`} aria-hidden>
-        <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.35 4.35l1.4 1.4M14.25 14.25l1.4 1.4M15.65 4.35l-1.4 1.4M5.75 14.25l-1.4 1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
       <span
         aria-hidden
-        className={`relative h-5 w-9 rounded-full transition ${dark ? "bg-indigo-500" : "bg-slate-300"}`}
+        className="relative h-8 w-[3.75rem] rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200 transition dark:bg-slate-900 dark:ring-slate-700"
       >
         <span
-          className={`absolute top-0.5 h-4 w-4 rounded-full shadow-sm transition-transform ${dark ? "translate-x-[18px]" : "translate-x-0.5"}`}
-          style={{ backgroundColor: "white" }}
-        />
+          className={`absolute left-1 top-1 grid h-6 w-6 place-items-center rounded-full shadow-sm transition-all duration-300 ${dark ? "translate-x-7 bg-indigo-500 text-white" : "translate-x-0 bg-white text-amber-500"}`}
+        >
+          {dark ? (
+            <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden><path d="M16.3 12.7A7 7 0 017.3 3.7a7 7 0 109 9z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+          ) : (
+            <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden><circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5" /><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.35 4.35l1.4 1.4M14.25 14.25l1.4 1.4M15.65 4.35l-1.4 1.4M5.75 14.25l-1.4 1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+          )}
+        </span>
       </span>
-      <svg viewBox="0 0 20 20" fill="none" className={`h-4 w-4 ${dark ? "text-indigo-300" : "text-slate-400"}`} aria-hidden>
-        <path d="M16.3 12.7A7 7 0 017.3 3.7a7 7 0 109 9z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      </svg>
-      <span className="min-w-14">{dark ? "โหมดมืด" : "โหมดสว่าง"}</span>
+      <span className="hidden text-xs font-medium text-slate-600 sm:inline dark:text-slate-200">{dark ? "โหมดมืด" : "โหมดสว่าง"}</span>
     </button>
   );
 }

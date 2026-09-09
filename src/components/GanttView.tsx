@@ -26,9 +26,9 @@ export default function GanttView({ tasks, today, members = [] }: { tasks: Task[
   const selected = tasks.find((task) => task.id === selectedId);
 
   return <section className="card overflow-hidden" aria-label="Gantt chart">
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-3 py-2.5">
       <div>
-        <h2 className="text-sm font-semibold text-slate-800">{label(start)} – {label(end)} {end.slice(0, 4)}</h2>
+        <h2 className="text-xs font-semibold text-slate-800 sm:text-sm">{label(start)} – {label(end)} {end.slice(0, 4)}</h2>
       </div>
       <div className="flex gap-1">
         <button type="button" aria-label="ก่อนหน้า 2 สัปดาห์" onClick={() => setOffset(offset - RANGE_DAYS)} className="grid h-7 w-7 place-items-center rounded-md border border-slate-200 bg-white text-xs text-slate-500 hover:bg-slate-50">←</button>
@@ -37,9 +37,9 @@ export default function GanttView({ tasks, today, members = [] }: { tasks: Task[
       </div>
     </div>
     <div className="overflow-x-auto">
-      <div className="min-w-[760px]">
+      <div className="min-w-[700px] sm:min-w-[760px]">
         <div className="flex border-b border-slate-200 bg-slate-50">
-          <div className="sticky left-0 z-20 w-44 shrink-0 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-600">งาน</div>
+          <div className="sticky left-0 z-20 w-36 shrink-0 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-600 sm:w-44">งาน</div>
           <div className="grid flex-1" style={{ gridTemplateColumns: `repeat(${RANGE_DAYS}, minmax(0, 1fr))` }}>
             {dates.map((date) => <div key={date} className={`border-l border-slate-200 py-2 text-center text-[10px] ${date === today ? 'bg-indigo-100 font-bold text-indigo-700' : 'text-slate-400'}`}>
               {date.slice(8)}
@@ -53,7 +53,7 @@ export default function GanttView({ tasks, today, members = [] }: { tasks: Task[
           const right = Math.min(RANGE_DAYS - 1, daysBetween(start, due));
           const inRange = right >= left;
           return <div key={task.id} className="flex border-b border-slate-100">
-            <button type="button" onClick={() => setSelectedId(task.id)} className="sticky left-0 z-20 w-44 shrink-0 bg-white px-3 py-2 text-left hover:bg-slate-50">
+            <button type="button" onClick={() => setSelectedId(task.id)} className="sticky left-0 z-20 w-36 shrink-0 bg-white px-3 py-2 text-left hover:bg-slate-50 sm:w-44">
               <span className="block truncate text-xs font-medium text-slate-700">{task.title}</span>
             </button>
             <div className="relative min-h-10 flex-1" style={{ backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px)', backgroundSize: `${100 / RANGE_DAYS}% 100%` }}>
