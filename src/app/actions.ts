@@ -26,7 +26,7 @@ import {
   updateTask,
 } from "@/lib/db/lists";
 import { validateTaskInput } from "@/lib/tasks";
-import type { Priority, Status } from "@/lib/types";
+import type { Priority, Status, TaskType } from "@/lib/types";
 
 export type ActionState = {
   ok: boolean;
@@ -76,10 +76,8 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
     return toState(error);
   }
 
-  if (!result.ok) return { ok: false, message: result.message, errors: result.errors };
-
-  revalidatePath(BOARD);
-  redirect(BOARD);
+  // สมัครสำเร็จแต่ยังไม่ได้ session (รอ approve) — ไม่ redirect ไป board เหมือน signIn
+  return result;
 }
 
 export async function signOut(): Promise<void> {
@@ -135,7 +133,11 @@ export async function addTask(_prev: ActionState, formData: FormData): Promise<A
       title: String(formData.get("title") ?? ""),
       notes: String(formData.get("notes") ?? ""),
       priority: String(formData.get("priority") ?? "medium") as Priority,
+      task_type: String(formData.get("task_type") ?? "task") as TaskType,
+      status: String(formData.get("status") ?? "todo") as Status,
+      start_date: String(formData.get("start_date") ?? ""),
       due_date: String(formData.get("due_date") ?? ""),
+      assignee_id: String(formData.get("assignee_id") ?? ""),
       tags: String(formData.get("tags") ?? ""),
     });
 
@@ -159,7 +161,10 @@ export async function editTask(_prev: ActionState, formData: FormData): Promise<
       notes: String(formData.get("notes") ?? ""),
       status: String(formData.get("status") ?? "todo") as Status,
       priority: String(formData.get("priority") ?? "medium") as Priority,
+      task_type: String(formData.get("task_type") ?? "task") as TaskType,
+      start_date: String(formData.get("start_date") ?? ""),
       due_date: String(formData.get("due_date") ?? ""),
+      assignee_id: String(formData.get("assignee_id") ?? ""),
       tags: String(formData.get("tags") ?? ""),
     });
 

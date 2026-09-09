@@ -4,6 +4,9 @@ export type Priority = (typeof PRIORITIES)[number];
 export const STATUSES = ["todo", "doing", "done"] as const;
 export type Status = (typeof STATUSES)[number];
 
+export const TASK_TYPES = ["task", "feature", "bug", "meeting"] as const;
+export type TaskType = (typeof TASK_TYPES)[number];
+
 /** วันที่แบบ 'YYYY-MM-DD' (Postgres `date`) — เก็บเป็น string ไม่ใช่ Date
  *  เพื่อไม่ให้ timezone ของ browser เลื่อนวันครบกำหนดไปวันอื่น */
 export type DateOnly = string;
@@ -15,7 +18,10 @@ export type Task = {
   notes: string | null;
   status: Status;
   priority: Priority;
+  task_type: TaskType;
+  start_date: DateOnly | null;
   due_date: DateOnly | null;
+  assignee_id: string | null;
   tags: string[];
   created_by: string;
   completed_at: string | null;
@@ -43,7 +49,10 @@ export type TaskInput = {
   notes?: string | null;
   status?: Status;
   priority?: Priority;
+  task_type?: TaskType;
+  start_date?: string | null;
   due_date?: string | null;
+  assignee_id?: string | null;
   tags?: string[] | string;
 };
 

@@ -37,6 +37,8 @@ model User {
   /// รูปแบบ "scrypt$N$r$p$saltB64$hashB64" — ดู src/lib/auth/password.ts
   passwordHash String   @map("password_hash")
   displayName  String?  @map("display_name")
+  /// สมัครแล้วยังใช้งานไม่ได้จนกว่าแอดมินจะเปลี่ยนเป็น true เอง (manual approve ผ่าน DB)
+  isApproved   Boolean  @default(false) @map("is_approved")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   sessions       Session[]
@@ -44,6 +46,7 @@ model User {
   ownedLists     List[]       @relation("ListOwner")
   memberships    ListMember[]
   createdTasks   Task[]       @relation("TaskCreator")
+  assignedTasks  Task[]       @relation("TaskAssignee")
 
   @@map("users")
 }
@@ -115,8 +118,11 @@ model Task {
   notes       String?
   status      TaskStatus   @default(todo)
   priority    TaskPriority @default(medium)
+  taskType    String       @default("task") @map("task_type") @db.VarChar(20)
+  startDate   DateTime?    @map("start_date") @db.Date
   /// เก็บเป็น `date` ไม่ใช่ timestamp — วันครบกำหนดไม่ควรขึ้นกับ timezone
   dueDate     DateTime?    @map("due_date") @db.Date
+  assigneeId  String?      @map("assignee_id") @db.Uuid
   tags        String[]     @default([])
   createdById String       @map("created_by") @db.Uuid
   completedAt DateTime?    @map("completed_at") @db.Timestamptz(6)
@@ -125,8 +131,10 @@ model Task {
 
   list      List @relation(fields: [listId], references: [id], onDelete: Cascade)
   createdBy User @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  assignee  User? @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
 
   @@index([listId, status])
   @@index([listId, dueDate])
+  @@index([assigneeId])
   @@map("tasks")
 }

@@ -1,4 +1,4 @@
-import type { Priority, Status, Task } from "@/lib/types";
+import type { Priority, Status, Task, TaskType } from "@/lib/types";
 
 /** shape ที่ Prisma คืนมาจากตาราง tasks (เขียนมือไว้เพื่อให้ test ไม่ต้องพึ่ง generated client) */
 export type TaskRow = {
@@ -8,7 +8,10 @@ export type TaskRow = {
   notes: string | null;
   status: Status;
   priority: Priority;
+  taskType: string;
+  startDate: Date | null;
   dueDate: Date | null;
+  assigneeId: string | null;
   tags: string[];
   createdById: string;
   completedAt: Date | null;
@@ -43,7 +46,10 @@ export function mapTask(row: TaskRow): Task {
     notes: row.notes,
     status: row.status,
     priority: row.priority,
+    task_type: row.taskType as TaskType,
+    start_date: toDateOnly(row.startDate),
     due_date: toDateOnly(row.dueDate),
+    assignee_id: row.assigneeId,
     tags: row.tags,
     created_by: row.createdById,
     completed_at: row.completedAt ? row.completedAt.toISOString() : null,

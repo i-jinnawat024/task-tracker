@@ -78,6 +78,8 @@ export type ApplyResetResult =
   | { ok: true }
   | { ok: false; message?: string; errors?: Record<string, string> };
 
+class ResetAlreadyConsumedError extends Error {}
+
 export async function applyPasswordReset(
   token: string,
   input: { password: string; confirm: string },
@@ -101,16 +103,28 @@ export async function applyPasswordReset(
 
   const passwordHash = await hashPassword(validated.value.password);
 
-  await prisma.$transaction([
-    prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
-    // ปิด token ใบนี้ และล้างใบอื่นที่ยังค้างอยู่ของ user คนเดียวกัน
-    prisma.passwordReset.update({ where: { tokenHash }, data: { usedAt: new Date() } }),
-    prisma.passwordReset.deleteMany({
-      where: { userId: record.userId, usedAt: null },
-    }),
-    // เตะทุกอุปกรณ์ออก — ถ้ารหัสเดิมหลุดไป คนที่ยัง login อยู่ต้องหมดสิทธิ์ด้วย
-    prisma.session.deleteMany({ where: { userId: record.userId } }),
-  ]);
+  try {
+    await prisma.$transaction(async (tx) => {
+      // ล็อกแถว user ก่อน เพื่อเรียงคำขอของบัญชีเดียวกัน แม้ใช้คนละ token
+      // ถ้ายึด token ไม่สำเร็จ ต้อง throw เพื่อ rollback รหัสผ่านด้วย
+      await tx.user.update({ where: { id: record.userId }, data: { passwordHash } });
+      const now = new Date();
+      const claimed = await tx.passwordReset.updateMany({
+        where: { tokenHash, usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
+      });
+      if (claimed.count !== 1) throw new ResetAlreadyConsumedError();
+
+      await tx.passwordReset.deleteMany({
+        where: { userId: record.userId, usedAt: null },
+      });
+      await tx.session.deleteMany({ where: { userId: record.userId } });
+    });
+  } catch (error) {
+    if (error instanceof ResetAlreadyConsumedError)
+      return { ok: false, message: RESET_STATUS_MESSAGE.missing };
+    throw error;
+  }
 
   // เพิ่ง proof ว่าเข้าถึงอีเมลได้ ให้ล็อกอินต่อเลยไม่ต้องพิมพ์รหัสซ้ำ
   await createSession(record.userId);

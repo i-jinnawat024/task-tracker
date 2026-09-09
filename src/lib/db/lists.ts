@@ -11,7 +11,10 @@ const TASK_SELECT = {
   notes: true,
   status: true,
   priority: true,
+  taskType: true,
+  startDate: true,
   dueDate: true,
+  assigneeId: true,
   tags: true,
   createdById: true,
   completedAt: true,
@@ -129,6 +132,7 @@ export async function createTask(
   input: ValidatedTask,
 ): Promise<Task> {
   await assertAccess(listId, userId, "write");
+  await assertAssignee(listId, input.assignee_id);
   const row = await prisma.task.create({
     data: {
       listId,
@@ -137,7 +141,10 @@ export async function createTask(
       notes: input.notes,
       status: input.status,
       priority: input.priority,
+      taskType: input.task_type,
+      startDate: parseDateOnly(input.start_date),
       dueDate: parseDateOnly(input.due_date),
+      assigneeId: input.assignee_id,
       tags: input.tags,
       completedAt: input.status === "done" ? new Date() : null,
     },
@@ -153,6 +160,7 @@ export async function updateTask(
 ): Promise<Task> {
   const listId = await listIdOfTask(taskId);
   await assertAccess(listId, userId, "write");
+  await assertAssignee(listId, input.assignee_id);
 
   const current = await prisma.task.findUniqueOrThrow({
     where: { id: taskId },
@@ -166,7 +174,10 @@ export async function updateTask(
       notes: input.notes,
       status: input.status,
       priority: input.priority,
+      taskType: input.task_type,
+      startDate: parseDateOnly(input.start_date),
       dueDate: parseDateOnly(input.due_date),
+      assigneeId: input.assignee_id,
       tags: input.tags,
       completedAt: completedAtFor(input.status, current.status, current.completedAt),
     },
@@ -289,4 +300,13 @@ async function listIdOfTask(taskId: string): Promise<string> {
   // ไม่บอกว่า "ไม่พบ" vs "ไม่มีสิทธิ์" ต่างกัน เพื่อไม่ให้เดาได้ว่ามี id นี้อยู่จริงไหม
   if (!task) throw new ForbiddenError("ไม่พบงานนี้ หรือไม่มีสิทธิ์เข้าถึง");
   return task.listId;
+}
+
+async function assertAssignee(listId: string, assigneeId: string | null): Promise<void> {
+  if (!assigneeId) return;
+  const member = await prisma.listMember.findUnique({
+    where: { listId_userId: { listId, userId: assigneeId } },
+    select: { userId: true },
+  });
+  if (!member) throw new ForbiddenError("ผู้รับผิดชอบต้องเป็นสมาชิกของลิสต์นี้");
 }

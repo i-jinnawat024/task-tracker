@@ -1,9 +1,11 @@
 import {
   PRIORITIES,
   STATUSES,
+  TASK_TYPES,
   type DueBucket,
   type Priority,
   type Status,
+  type TaskType,
   type Task,
   type TaskFilters,
   type TaskInput,
@@ -21,7 +23,10 @@ export type ValidatedTask = {
   notes: string | null;
   status: Status;
   priority: Priority;
+  task_type: TaskType;
+  start_date: string | null;
   due_date: string | null;
+  assignee_id: string | null;
   tags: string[];
 };
 
@@ -90,12 +95,27 @@ export function validateTaskInput(input: TaskInput): ValidationResult {
   const priority = (input.priority ?? "medium") as Priority;
   if (!PRIORITIES.includes(priority)) errors.priority = "ระดับความสำคัญไม่ถูกต้อง";
 
+  const task_type = (input.task_type ?? "task") as TaskType;
+  if (!TASK_TYPES.includes(task_type)) errors.task_type = "ประเภทงานไม่ถูกต้อง";
+
+  const rawStart = (input.start_date ?? "").trim();
+  let start_date: string | null = null;
+  if (rawStart) {
+    if (!isValidDateOnly(rawStart)) errors.start_date = "วันเริ่มต้องเป็นรูปแบบ ปปปป-ดด-วว";
+    else start_date = rawStart;
+  }
+
   const rawDue = (input.due_date ?? "").trim();
   let due_date: string | null = null;
   if (rawDue) {
     if (!isValidDateOnly(rawDue)) errors.due_date = "วันครบกำหนดต้องเป็นรูปแบบ ปปปป-ดด-วว";
     else due_date = rawDue;
   }
+
+  if (start_date && due_date && start_date > due_date)
+    errors.start_date = "วันเริ่มต้องไม่อยู่หลังวันครบกำหนด";
+
+  const assignee_id = (input.assignee_id ?? "").trim() || null;
 
   const notesRaw = (input.notes ?? "").trim();
   const notes = notesRaw || null;
@@ -104,7 +124,17 @@ export function validateTaskInput(input: TaskInput): ValidationResult {
 
   return {
     ok: true,
-    value: { title, notes, status, priority, due_date, tags: normalizeTags(input.tags) },
+    value: {
+      title,
+      notes,
+      status,
+      priority,
+      task_type,
+      start_date,
+      due_date,
+      assignee_id,
+      tags: normalizeTags(input.tags),
+    },
   };
 }
 

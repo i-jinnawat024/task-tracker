@@ -12,9 +12,12 @@ import {
   todayISO,
 } from "@/lib/tasks";
 import type { ListMember, Status, Task, TaskList } from "@/lib/types";
+import ListSwitcher from "./ListSwitcher";
 import NewTaskForm from "./NewTaskForm";
 import ShareBox from "./ShareBox";
 import TaskItem from "./TaskItem";
+import KanbanView from "./KanbanView";
+import GanttView from "./GanttView";
 
 type Props = {
   user: CurrentUser;
@@ -47,9 +50,20 @@ export default function Board({
   // server กับ browser อาจอยู่ต่าง timezone — render ครั้งแรกใช้ค่าจาก server
   // เพื่อไม่ให้ hydration mismatch แล้วค่อยแก้เป็นวันของเครื่องผู้ใช้หลัง mount
   const [today, setToday] = useState(serverToday);
-  useEffect(() => setToday(todayISO()), []);
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    const tick = () => {
+      const current = new Date();
+      setToday(todayISO(current));
+      setNow(current);
+    };
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
-  const [status, setStatus] = useState<Status | "open" | "all">("open");
+  const [status, setStatus] = useState<Status | "open" | "all">("all");
+  const [view, setView] = useState<"list" | "kanban" | "gantt">("kanban");
   const [tag, setTag] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
@@ -71,28 +85,34 @@ export default function Board({
   );
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-24 pt-5 sm:px-6">
+    <main className={`mx-auto px-4 pb-24 pt-5 sm:px-6 ${view === "list" ? "max-w-3xl" : "max-w-7xl"}`}>
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="flex items-center gap-3">
+          <div>
           <h1 className="text-xl font-bold text-slate-900">{activeList.name}</h1>
           <p className="mt-0.5 text-xs text-slate-500">
             {user.displayName ?? user.email}
             {members.length > 1 && ` · แชร์กับ ${members.length - 1} คน`}
           </p>
+          </div>
+          {now && (
+            <div className="hidden border-l border-slate-300 pl-3 sm:block" aria-label="วันเวลาปัจจุบัน">
+              <p className="text-xs font-medium text-slate-600">
+                {now.toLocaleDateString("th-TH", { weekday: "short", day: "numeric", month: "short" })}
+              </p>
+              <p className="text-[11px] tabular-nums text-slate-400">
+                {now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {lists.length > 1 && (
-            <select
-              className="field w-auto py-1.5 text-xs"
-              value={activeList.id}
-              onChange={(e) => router.push(`/board?list=${e.target.value}`)}
-            >
-              {lists.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
+            <ListSwitcher
+              lists={lists}
+              activeId={activeList.id}
+              onSelect={(id) => router.push(`/board?list=${id}`)}
+            />
           )}
           <form action={signOut}>
             <button type="submit" className="btn-ghost py-1.5 text-xs">
@@ -128,9 +148,22 @@ export default function Board({
         </div>
       </section>
 
-      <NewTaskForm listId={activeList.id} />
+      <div className="my-3 flex justify-end">
+        <NewTaskForm listId={activeList.id} members={members} />
+      </div>
 
       <div className="mb-3 mt-5 space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1" aria-label="มุมมองงาน">
+            {([['kanban', 'Kanban'], ['gantt', 'Gantt chart'], ['list', 'List']] as const).map(([value, label]) => (
+              <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${view === value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-slate-500">แสดง {visible.length} จาก {tasks.length} งาน</span>
+        </div>
         <div className="flex gap-1 rounded-lg bg-slate-200/60 p-1">
           {STATUS_TABS.map((tab) => (
             <button
@@ -185,11 +218,13 @@ export default function Board({
         )}
       </div>
 
-      <ul className="space-y-2">
+      {view === "list" && <ul className="space-y-2">
         {visible.map((task) => (
-          <TaskItem key={task.id} task={task} today={today} />
+          <TaskItem key={task.id} task={task} today={today} members={members} />
         ))}
-      </ul>
+      </ul>}
+      {view === "kanban" && <KanbanView tasks={visible} today={today} members={members} />}
+      {view === "gantt" && <GanttView tasks={visible} today={today} members={members} />}
 
       {visible.length === 0 && (
         <p className="card py-10 text-center text-sm text-slate-400">

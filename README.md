@@ -4,6 +4,10 @@
 
 **ฟีเจอร์:** เพิ่ม/แก้/ลบ/ติ๊กเสร็จ · กำหนดวันเสร็จ + ไฮไลต์งานเลยกำหนด · ความสำคัญ 3 ระดับ + แท็ก · แชร์ลิสต์ให้อีกคนแก้ร่วมกันได้ · login ด้วยอีเมล+รหัสผ่าน · ลืมรหัสผ่าน (ส่งลิงก์ทางอีเมล)
 
+**มุมมองงาน:** Kanban (ลากหรือเลือกสถานะเพื่อย้ายงาน), Gantt chart และ List
+ใช้ตัวกรองร่วมกัน · Gantt แสดงวันสร้างงานถึงวันครบกำหนด ครั้งละ 4 สัปดาห์
+กดแถบเพื่อเปิดแก้ไขงานได้ งานที่ไม่มีวันครบกำหนดอยู่ในหัวข้อ “ยังไม่กำหนดวัน”
+
 ไม่มี dependency ภายนอกนอกจาก DB — auth เขียนเองทั้งหมด (scrypt จาก `node:crypto` + session ใน DB)
 
 ---
@@ -82,6 +86,17 @@ datasource db {
 
 ## เอาขึ้นออนไลน์ (Vercel)
 
+### งานที่เหลือก่อนเปิดใช้ร่วมกัน
+
+- ตั้ง `RESEND_API_KEY` และ `MAIL_FROM` สำหรับส่งอีเมลจริง
+- deploy แอปและตั้ง `APP_URL` ให้ตรงกับ URL ออนไลน์ พร้อมตั้ง `DATABASE_URL` บน hosting
+- ตรวจ migration ของ DB ปลายทางด้วย `prisma migrate status` และ apply ด้วย `pnpm db:deploy` ถ้ายังค้าง
+- ทดสอบผ่าน browser ด้วยสองบัญชี: สมัคร/เข้าใช้, แชร์ลิสต์, เพิ่ม/แก้/ติ๊กงาน, ถอนสิทธิ์ และ reset password ทางอีเมล
+- ทดสอบส่ง reset พร้อมกันกับ DB ทดสอบ เพื่อยืนยัน rollback และการใช้ token ได้ครั้งเดียวใน Postgres จริง (unit test จำลอง transaction)
+
+ระบบ reset ตรวจ token ซ้ำใน transaction หลัง hash รหัสผ่าน หาก token ถูกใช้แล้วหรือหมดอายุ
+จะ rollback การเปลี่ยนรหัสผ่านและไม่สร้าง session ใหม่
+
 ```bash
 pnpm dlx vercel
 ```
@@ -97,7 +112,7 @@ pnpm dlx vercel
 
 ```bash
 pnpm dev            # dev server
-pnpm test           # unit test (86 เคส)
+pnpm test           # unit test (94 เคส)
 pnpm test:watch     # test แบบ watch
 pnpm typecheck      # tsc --noEmit
 pnpm lint           # eslint
@@ -193,7 +208,7 @@ src/
       prisma.ts        client singleton
     mail.ts          ประกอบอีเมล + ส่งผ่าน Resend REST API
   middleware.ts        ด่านหน้า: ไม่มี cookie ก็ไม่ให้เข้า /board
-tests/                 86 เคส — logic, สิทธิ์, วันที่, hash รหัสผ่าน, validate, reset token, อีเมล
+tests/                 94 เคส — logic, สิทธิ์, วันที่, hash รหัสผ่าน, validate, reset token, อีเมล, มุมมองงาน
 ```
 
 ---
