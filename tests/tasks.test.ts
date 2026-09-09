@@ -226,6 +226,17 @@ describe("filterTasks", () => {
     expect(filterTasks(tasks, { overdueOnly: true }, TODAY).map((t) => t.id)).toEqual(["1"]);
   });
 
+  it("กรองตามช่วงวันครบกำหนดและไม่นับงานที่ไม่มีวันครบกำหนด", () => {
+    const dated = [
+      ...tasks,
+      task({ id: "4", due_date: "2026-09-07" }),
+      task({ id: "5", due_date: "2026-09-12" }),
+    ];
+    expect(filterTasks(dated, { dueFrom: "2026-09-02", dueTo: "2026-09-10" }, TODAY).map((t) => t.id)).toEqual(["4"]);
+    expect(filterTasks(dated, { dueFrom: "2026-09-07" }, TODAY).map((t) => t.id)).toEqual(["4", "5"]);
+    expect(filterTasks(dated, { dueTo: "2026-09-01" }, TODAY).map((t) => t.id)).toEqual(["1"]);
+  });
+
   it("รวมหลายเงื่อนไขแบบ AND", () => {
     expect(
       filterTasks(tasks, { status: "open", tag: "บ้าน", search: "นม" }, TODAY).map(

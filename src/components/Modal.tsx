@@ -19,6 +19,16 @@ export default function Modal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  // ล็อกไม่ให้หน้าเพจข้างหลัง modal เลื่อนตามได้ขณะเปิดอยู่ — เก็บค่าเดิมไว้คืนตอนปิด
+  // เผื่อมี modal ซ้อนกันหรือหน้าตั้งค่า overflow เองอยู่ก่อนแล้ว
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4"
