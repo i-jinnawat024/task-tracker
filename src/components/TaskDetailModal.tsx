@@ -37,7 +37,16 @@ export default function TaskDetailModal({
 
   return (
     <Modal title="รายละเอียดงาน" onClose={onClose}>
-      <form action={formAction} className="space-y-3">
+      <form
+        action={formAction}
+        className="space-y-3"
+        onKeyDown={(event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+            event.preventDefault();
+            event.currentTarget.requestSubmit();
+          }
+        }}
+      >
         <input type="hidden" name="task_id" value={task.id} />
 
         <label className="block">

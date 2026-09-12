@@ -19,6 +19,7 @@ import ShareBox from "./ShareBox";
 import TaskItem from "./TaskItem";
 import KanbanView from "./KanbanView";
 import GanttView from "./GanttView";
+import WeekView from "./WeekView";
 
 type Props = {
   user: CurrentUser;
@@ -57,7 +58,7 @@ export default function Board({
   }, []);
 
   const [status, setStatus] = useState<Status | "open" | "all">("all");
-  const [view, setView] = useState<"list" | "kanban" | "gantt">("kanban");
+  const [view, setView] = useState<"list" | "kanban" | "gantt" | "week">("kanban");
   const [tag, setTag] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
@@ -159,8 +160,8 @@ export default function Board({
 
       <div className="mb-3 mt-5 space-y-2.5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-          <div className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-200 bg-white p-1 sm:flex sm:w-auto" aria-label="มุมมองงาน">
-            {([['kanban', 'Kanban'], ['gantt', 'Gantt chart'], ['list', 'List']] as const).map(([value, label]) => (
+          <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-white p-1 sm:flex sm:w-auto" aria-label="มุมมองงาน">
+            {([['kanban', 'Kanban'], ['gantt', 'Gantt chart'], ['week', 'Week'], ['list', 'List']] as const).map(([value, label]) => (
               <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}
                 className={`rounded-lg px-2 py-2 text-xs font-medium transition sm:px-4 sm:text-sm ${view === value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-700'}`}>
                 {label}
@@ -234,6 +235,7 @@ export default function Board({
       </ul>}
       {view === "kanban" && <KanbanView tasks={visible} today={today} members={members} />}
       {view === "gantt" && <GanttView tasks={visible} today={today} members={members} />}
+      {view === "week" && <WeekView tasks={visible} today={today} members={members} listId={activeList.id} />}
 
       {visible.length === 0 && (
         <p className="card py-10 text-center text-sm text-slate-400">

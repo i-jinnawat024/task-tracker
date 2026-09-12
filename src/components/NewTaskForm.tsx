@@ -9,10 +9,29 @@ import Modal from "./Modal";
 import TagInput from "./TagInput";
 import { PRIORITY_OPTIONS, STATUS_OPTIONS, TaskTypeIcon, TYPE_OPTIONS } from "./taskFormOptions";
 
-export default function NewTaskForm({ listId, members = [] }: { listId: string; members?: ListMember[] }) {
+export default function NewTaskForm({
+  listId,
+  members = [],
+  defaultDueDate,
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
+}: {
+  listId: string;
+  members?: ListMember[];
+  /** ใช้ตอนเปิดฟอร์มจากที่อื่น เช่น คลิกวันที่ใน Week view เพื่อ prefill กำหนดเสร็จ */
+  defaultDueDate?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+}) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(addTask, null);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // ควบคุมจากภายนอกได้ (เช่น WeekView) โดยยังใช้ internal state ได้เองถ้าไม่ได้ส่ง open/onOpenChange มา
+  const open = openProp ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
 
   // เพิ่มสำเร็จแล้วล้างฟอร์ม + ปิด modal เพื่อพิมพ์งานถัดไปได้ทันที
   useEffect(() => {
@@ -20,20 +39,23 @@ export default function NewTaskForm({ listId, members = [] }: { listId: string; 
       formRef.current?.reset();
       setOpen(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="btn-primary px-3 py-1.5 text-xs shadow-sm"
-      >
-        <span aria-hidden className="text-base leading-none">
-          +
-        </span>
-        เพิ่มงาน
-      </button>
+      {!hideTrigger && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="btn-primary px-3 py-1.5 text-xs shadow-sm"
+        >
+          <span aria-hidden className="text-base leading-none">
+            +
+          </span>
+          เพิ่มงาน
+        </button>
+      )}
 
       {open && (
         <Modal title="เพิ่มงานใหม่" onClose={() => setOpen(false)}>
@@ -71,7 +93,7 @@ export default function NewTaskForm({ listId, members = [] }: { listId: string; 
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <DatePicker name="start_date" label="วันเริ่ม" />
-              <DatePicker name="due_date" label="กำหนดเสร็จ" />
+              <DatePicker name="due_date" label="กำหนดเสร็จ" defaultValue={defaultDueDate ?? ""} />
             </div>
             {state?.errors?.start_date && <p className="text-xs text-rose-600">{state.errors.start_date}</p>}
             {state?.errors?.due_date && (
