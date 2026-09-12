@@ -33,6 +33,7 @@ export default function TagInput({ defaultTags = [] }: { defaultTags?: string[] 
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
+            if (event.ctrlKey || event.metaKey) return;
             if (event.key === "Enter" || event.key === ",") {
               event.preventDefault();
               addDraft();

@@ -65,6 +65,18 @@ describe("TaskDetailModal", () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 
+  it("submits on Ctrl+Enter from anywhere in the form", async () => {
+    editTask.mockResolvedValue({ ok: true });
+    const onClose = vi.fn();
+    render(<TaskDetailModal task={task} today="2026-09-09" members={members} onClose={onClose} />);
+
+    fireEvent.keyDown(screen.getByLabelText("รายละเอียด"), { key: "Enter", ctrlKey: true });
+
+    await waitFor(() => expect(editTask).toHaveBeenCalled());
+    const formData = editTask.mock.calls[0][1] as FormData;
+    expect(formData.get("task_id")).toBe("task-1");
+  });
+
   it("shows a server validation error without closing", async () => {
     editTask.mockResolvedValue({ ok: false, errors: { title: "กรุณาใส่ชื่องาน" } });
     const onClose = vi.fn();

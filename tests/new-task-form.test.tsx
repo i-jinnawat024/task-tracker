@@ -83,6 +83,22 @@ describe("NewTaskForm", () => {
     expect(screen.getByRole("dialog")).toBeTruthy();
   });
 
+  it("supports being launched externally with a controlled open state and no trigger", () => {
+    const onOpenChange = vi.fn();
+    render(<NewTaskForm listId="list-1" open hideTrigger onOpenChange={onOpenChange} />);
+
+    expect(screen.queryByRole("button", { name: /เพิ่มงาน/ })).toBeNull();
+    expect(screen.getByRole("dialog")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "ยกเลิก" }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("pre-fills the due date when opened externally with a default date", () => {
+    render(<NewTaskForm listId="list-1" open hideTrigger defaultDueDate="2026-09-20" onOpenChange={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "กำหนดเสร็จ" }).textContent).toContain("2569");
+  });
+
   it("closes the modal on Escape", () => {
     render(<NewTaskForm listId="list-1" />);
     fireEvent.click(screen.getByRole("button", { name: /เพิ่มงาน/ }));
