@@ -18,25 +18,30 @@ function parseISO(value: string) {
 }
 
 function formatDate(value: string) {
-  if (!value) return "เลือกวันที่";
   return parseISO(value).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
 }
 
-export default function DatePicker({ name, label, defaultValue = "", value: controlledValue, onChange }: { name?: string; label: string; defaultValue?: string; value?: string; onChange?: (value: string) => void }) {
-  const initialValue = controlledValue ?? defaultValue;
-  const initial = initialValue ? parseISO(initialValue) : new Date();
-  const [internalValue, setInternalValue] = useState(initialValue);
+export default function DateRangePicker({
+  label,
+  from,
+  to,
+  onChange,
+}: {
+  label: string;
+  from: string;
+  to: string;
+  onChange: (from: string, to: string) => void;
+}) {
   const [open, setOpen] = useState(false);
-  const [month, setMonth] = useState(() => new Date(initial.getFullYear(), initial.getMonth(), 1));
+  const [month, setMonth] = useState(() => {
+    const base = from ? parseISO(from) : new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const [popupPosition, setPopupPosition] = useState({ left: 0, top: 0 });
 
-  // ปฏิทิน portal ออกไปที่ document.body แล้ววางด้วย position:fixed พิกัดจริงของจอ (ไม่ใช่ absolute
-  // ใต้ปุ่ม) เพราะถ้าปุ่มอยู่ใน modal ที่มี overflow-y-auto (ซึ่งทำให้ overflow-x กลายเป็น auto ไปด้วย
-  // ตาม spec) ปฏิทินแบบ absolute เดิมจะโดน modal ครอบ/ตัด กลายเป็นต้อง scroll ข้างในโมดัลไปหาแทน
-  // การ portal ออกจาก DOM ของ modal ทำให้ปฏิทินไม่ถูก container ไหนบังคับ scroll/clip อีก
   useLayoutEffect(() => {
     if (!open) return;
 
@@ -79,7 +84,6 @@ export default function DatePicker({ name, label, defaultValue = "", value: cont
     if (!open) return;
     function onPointerDown(event: PointerEvent) {
       const target = event.target as Node;
-      // ปฏิทิน portal ออกไปอยู่นอก rootRef แล้ว ต้องเช็คแยกว่าคลิกโดนปฏิทินเองไหมด้วย
       if (rootRef.current?.contains(target) || popupRef.current?.contains(target)) return;
       setOpen(false);
     }
@@ -107,20 +111,42 @@ export default function DatePicker({ name, label, defaultValue = "", value: cont
 
   const today = new Date();
   const todayISO = toISO(today.getFullYear(), today.getMonth(), today.getDate());
-  const value = controlledValue ?? internalValue;
-  const selectValue = (next: string) => {
-    setInternalValue(next);
-    onChange?.(next);
+
+  // ยังไม่ครบคู่ (มี from แต่ยังไม่มี to) แปลว่ากำลังรอเลือกวันสิ้นสุด — คลิกครั้งถัดไปจึงปิด popup
+  const selectingEnd = Boolean(from) && !to;
+
+  function selectDate(iso: string) {
+    if (selectingEnd) {
+      if (iso < from) onChange(iso, from);
+      else onChange(from, iso);
+      setOpen(false);
+    } else {
+      onChange(iso, "");
+    }
+  }
+
+  function clear() {
+    onChange("", "");
     setOpen(false);
-  };
+  }
+
+  const placeholder = selectingEnd ? `${formatDate(from)} – เลือกวันสิ้นสุด` : "เลือกช่วงวันที่";
+  const display = from && to ? `${formatDate(from)} – ${formatDate(to)}` : placeholder;
 
   return (
     <div ref={rootRef} className="relative">
       <label className="mb-1 block text-xs font-medium text-slate-600">{label}</label>
-      {name && <input type="hidden" name={name} value={value} />}
-      <button ref={triggerRef} type="button" aria-label={label} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((current) => !current)} className={`field flex items-center justify-between py-1.5 text-left text-xs ${value ? "text-slate-700" : "text-slate-400"}`}>
-        <span>{formatDate(value)}</span>
-        <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label={label}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={`field flex items-center justify-between py-1.5 text-left text-xs ${from || to ? "text-slate-700" : "text-slate-400"}`}
+      >
+        <span className="truncate">{display}</span>
+        <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
           <rect x="3" y="4.5" width="14" height="12.5" rx="2" /><path d="M6.5 2.5v4M13.5 2.5v4M3 8h14" strokeLinecap="round" />
         </svg>
       </button>
@@ -140,17 +166,41 @@ export default function DatePicker({ name, label, defaultValue = "", value: cont
             <span className="text-xs font-semibold text-slate-700">{month.toLocaleDateString("th-TH", { month: "long", year: "numeric" })}</span>
             <button type="button" aria-label="เดือนถัดไป" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="grid h-7 w-7 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700">→</button>
           </div>
+          <p className="mb-2 text-center text-[11px] text-slate-400">
+            {selectingEnd ? "เลือกวันสิ้นสุด" : "เลือกวันเริ่มต้น"}
+          </p>
           <div className="grid grid-cols-7 text-center text-[10px] text-slate-400">
             {DAY_NAMES.map((day) => <span key={day} className="py-1">{day}</span>)}
             {cells.map((day, index) => {
               if (!day) return <span key={`empty-${index}`} />;
               const iso = toISO(month.getFullYear(), month.getMonth(), day);
-              return <button key={iso} type="button" aria-label={iso} onClick={() => selectValue(iso)} className={`mx-auto grid h-7 w-7 place-items-center rounded-full text-xs transition ${value === iso ? "bg-indigo-600 font-semibold text-white" : iso === todayISO ? "bg-indigo-50 font-semibold text-indigo-700" : "text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"}`}>{day}</button>;
+              const isFrom = iso === from;
+              const isTo = iso === to;
+              const inRange = Boolean(from && to) && iso > from && iso < to;
+              const endpoint = isFrom || isTo;
+              return (
+                <button
+                  key={iso}
+                  type="button"
+                  aria-label={iso}
+                  onClick={() => selectDate(iso)}
+                  className={`mx-auto grid h-7 w-7 place-items-center rounded-full text-xs transition ${
+                    endpoint
+                      ? "bg-indigo-600 font-semibold text-white"
+                      : inRange
+                        ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
+                        : iso === todayISO
+                          ? "bg-indigo-50 font-semibold text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200"
+                          : "text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {day}
+                </button>
+              );
             })}
           </div>
-          <div className="mt-2 flex justify-between border-t border-slate-100 pt-2">
-            <button type="button" onClick={() => selectValue("")} className="text-[11px] text-slate-400 hover:text-rose-500">ล้าง</button>
-            <button type="button" onClick={() => { selectValue(todayISO); setMonth(new Date(today.getFullYear(), today.getMonth(), 1)); }} className="text-[11px] font-medium text-indigo-600">วันนี้</button>
+          <div className="mt-2 flex justify-between border-t border-slate-100 pt-2 dark:border-slate-700">
+            <button type="button" onClick={clear} className="text-[11px] text-slate-400 hover:text-rose-500">ล้าง</button>
           </div>
         </div>,
         document.body,

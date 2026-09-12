@@ -31,6 +31,10 @@ type Props = {
 };
 
 const AUTO_REFRESH_MS = 15_000;
+const VIEW_STORAGE_KEY = "task-tracker-view";
+type ViewOption = "list" | "kanban" | "gantt" | "week";
+const VIEW_OPTIONS: ViewOption[] = ["list", "kanban", "gantt", "week"];
+const DEFAULT_VIEW: ViewOption = "week";
 
 export default function Board({
   user,
@@ -58,7 +62,19 @@ export default function Board({
   }, []);
 
   const [status, setStatus] = useState<Status | "open" | "all">("all");
-  const [view, setView] = useState<"list" | "kanban" | "gantt" | "week">("kanban");
+  const [view, setView] = useState<ViewOption>(DEFAULT_VIEW);
+
+  // จำมุมมองล่าสุดที่ user เลือกไว้ต่อเครื่อง — default เป็น Week ถ้ายังไม่เคยเลือก
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (saved && (VIEW_OPTIONS as string[]).includes(saved)) setView(saved as ViewOption);
+  }, []);
+
+  function selectView(next: ViewOption) {
+    setView(next);
+    localStorage.setItem(VIEW_STORAGE_KEY, next);
+  }
+
   const [tag, setTag] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [overdueOnly, setOverdueOnly] = useState(false);
@@ -162,7 +178,7 @@ export default function Board({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-white p-1 sm:flex sm:w-auto" aria-label="มุมมองงาน">
             {([['kanban', 'Kanban'], ['gantt', 'Gantt chart'], ['week', 'Week'], ['list', 'List']] as const).map(([value, label]) => (
-              <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}
+              <button key={value} type="button" aria-pressed={view === value} onClick={() => selectView(value)}
                 className={`rounded-lg px-2 py-2 text-xs font-medium transition sm:px-4 sm:text-sm ${view === value ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-700'}`}>
                 {label}
               </button>

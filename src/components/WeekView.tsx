@@ -51,7 +51,7 @@ export default function WeekView({ tasks, today, members = [], listId }: { tasks
         </div>
       </div>
 
-      <div className="grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-7 sm:divide-x sm:divide-y-0">
+      <div className="grid grid-cols-1 divide-y divide-slate-100 dark:divide-slate-700 sm:grid-cols-7 sm:divide-x sm:divide-y-0">
         {dates.map((date) => {
           const dayTasks = scheduled.filter((task) => task.due_date === date);
           return (
@@ -67,7 +67,7 @@ export default function WeekView({ tasks, today, members = [], listId }: { tasks
                   setQuickAddDate(date);
                 }
               }}
-              className={`min-h-24 cursor-pointer p-2 transition hover:bg-slate-100 ${date === today ? "bg-indigo-50 hover:bg-indigo-100" : ""}`}
+              className={`min-h-24 cursor-pointer p-2 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${date === today ? "bg-indigo-50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50" : ""}`}
             >
               <p className={`mb-1.5 text-[11px] font-semibold ${date === today ? "text-indigo-700" : "text-slate-500"}`}>
                 {weekdayLabel(date)}. {label(date)}
@@ -81,7 +81,7 @@ export default function WeekView({ tasks, today, members = [], listId }: { tasks
                         event.stopPropagation();
                         setSelectedId(task.id);
                       }}
-                      className="flex w-full items-start gap-1.5 rounded-md bg-white px-1.5 py-1 text-left text-[11px] font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"
+                      className="flex w-full items-start gap-1.5 rounded-md bg-white px-1.5 py-1 text-left text-[11px] font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:ring-slate-700 dark:hover:bg-slate-700"
                     >
                       <span aria-hidden title={PRIORITY_LABEL[task.priority]} className={`mt-1 h-2 w-2 shrink-0 rounded-full ${PRIORITY_STYLE[task.priority]}`} />
                       <span className="min-w-0 flex-1">

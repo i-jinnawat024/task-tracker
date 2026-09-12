@@ -43,11 +43,30 @@ describe("FiltersPanel", () => {
     expect(props.onOverdueOnlyChange).toHaveBeenCalledWith(true);
   });
 
-  it("calls onDueFromChange when a date is picked in the range start", () => {
+  it("calls onDueFromChange when the start of a date range is picked", () => {
     const props = renderPanel();
-    fireEvent.click(screen.getByRole("button", { name: "ตั้งแต่วันที่" }));
+    fireEvent.click(screen.getByRole("button", { name: "กำหนดเสร็จ (ช่วง)" }));
     fireEvent.click(screen.getByRole("button", { name: "2026-09-05" }));
     expect(props.onDueFromChange).toHaveBeenCalledWith("2026-09-05");
+    expect(props.onDueToChange).toHaveBeenCalledWith("");
+  });
+
+  it("calls both onDueFromChange and onDueToChange once the end of the range is picked", () => {
+    const props = renderPanel({ dueFrom: "2026-09-05" });
+    fireEvent.click(screen.getByRole("button", { name: "กำหนดเสร็จ (ช่วง)" }));
+    fireEvent.click(screen.getByRole("button", { name: "2026-09-10" }));
+    expect(props.onDueFromChange).toHaveBeenCalledWith("2026-09-05");
+    expect(props.onDueToChange).toHaveBeenCalledWith("2026-09-10");
+  });
+
+  it("does not close the panel when picking a date in the range popup (portal escapes the panel's own DOM)", () => {
+    const props = renderPanel();
+    fireEvent.click(screen.getByRole("button", { name: "กำหนดเสร็จ (ช่วง)" }));
+    const dayButton = screen.getByRole("button", { name: "2026-09-05" });
+    fireEvent.pointerDown(dayButton);
+    fireEvent.click(dayButton);
+    expect(props.onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeTruthy();
   });
 
   it("calls onClear when clicking clear filters", () => {
