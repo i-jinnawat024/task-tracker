@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Status } from "@/lib/types";
-import DatePicker from "./DatePicker";
+import DateRangePicker from "./DateRangePicker";
 
 const STATUS_TABS: { value: Status | "open" | "all"; label: string }[] = [
   { value: "open", label: "ที่ต้องทำ" },
@@ -91,11 +91,15 @@ export default function FiltersPanel({
       </label>
 
       <div className="mt-3">
-        <p className="mb-1.5 text-xs font-medium text-slate-600">กำหนดเสร็จ (ช่วง)</p>
-        <div className="grid grid-cols-2 gap-2">
-          <DatePicker label="ตั้งแต่วันที่" value={dueFrom} onChange={onDueFromChange} />
-          <DatePicker label="ถึงวันที่" value={dueTo} onChange={onDueToChange} />
-        </div>
+        <DateRangePicker
+          label="กำหนดเสร็จ (ช่วง)"
+          from={dueFrom}
+          to={dueTo}
+          onChange={(from, to) => {
+            onDueFromChange(from);
+            onDueToChange(to);
+          }}
+        />
       </div>
 
       <div className="mt-3.5 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
